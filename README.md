@@ -29,13 +29,9 @@ work-items/
 
 ## Installation
 
-### dotnet tool (recommended)
+### dotnet tool
 
-Once published to NuGet:
-
-```bash
-dotnet tool install -g markban
-```
+Planned — not yet available on NuGet.
 
 ### Build from source
 
