@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>markban</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div style="font-weight: bold; color: var(--accent); font-size: 1.2rem;">markban</div>
+        <div class="search-container">
+            <input type="text" id="search-box" placeholder="Search by ID, slug, or content..." oninput="filterCards(this.value)">
+        </div>
+        <div id="stats" style="font-size: 0.8rem; color: #888;"></div>
+    </header>
+    <div class="toolbar" id="toolbar"></div>
+    <div class="kanban" id="kanban">
+        <div class="column" data-lane="Todo"><h2>Todo <span class="col-count"></span></h2><div class="cards" id="col-Todo"></div></div>
+        <div class="column" data-lane="In Progress"><h2>In Progress <span class="col-count"></span></h2><div class="cards" id="col-In-Progress"></div></div>
+        <div class="column" data-lane="Testing"><h2>Testing <span class="col-count"></span></h2><div class="cards" id="col-Testing"></div></div>
+        <div class="column" data-lane="Done"><h2>Done <span class="col-count"></span></h2><div class="cards" id="col-Done"></div></div>
+        <div class="column" data-lane="Ideas"><h2>Ideas <span class="col-count"></span></h2><div class="cards" id="col-Ideas"></div></div>
+        <div class="column" data-lane="Rejected"><h2>Rejected <span class="col-count"></span></h2><div class="cards" id="col-Rejected"></div></div>
+    </div>
+    <div id="detail-pane" onclick="if(event.target === this) closeDetail()">
+        <div class="detail-container">
+            <div class="detail-header">
+                <div class="move-controls">
+                    <span class="detail-status" id="detail-status"></span>
+                    <select class="move-select" id="move-target">
+                        <option value="">Move to…</option>
+                        <option value="Todo">Todo</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Testing">Testing</option>
+                        <option value="Done">Done</option>
+                        <option value="Ideas">Ideas</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                    <button class="move-btn" id="move-btn" onclick="moveItem()" disabled>Move</button>
+                    <span id="move-feedback"></span>
+                </div>
+                <button class="close-btn" onclick="closeDetail()">Esc to Close</button>
+            </div>
+            <div id="detail-content"></div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Markban.Cli/Markban.Cli.csproj" />
+  <Project Path="Markban.Core/Markban.Core.csproj" />
+  <Project Path="Markban.IntegrationTests/Markban.IntegrationTests.csproj" />
+  <Project Path="Markban.UnitTests/Markban.UnitTests.csproj" />
+  <Project Path="Markban.Web/Markban.Web.csproj" />
+</Solution>

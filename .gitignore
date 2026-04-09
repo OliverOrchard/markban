@@ -1,0 +1,23 @@
+## Build outputs
+bin/
+obj/
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+nupkg/
+
+## VS / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+## Test results
+TestResults/
+coverage/
+
+## OS
+.DS_Store
+Thumbs.db
