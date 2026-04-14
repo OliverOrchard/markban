@@ -1,12 +1,29 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 public static class WorkItemStore
 {
-    public static string FindRoot()
+    public static string FindRoot(string? startDir = null)
     {
-        var current = Directory.GetCurrentDirectory();
+        var current = startDir ?? Directory.GetCurrentDirectory();
         while (current != null)
         {
+            var configPath = Path.Combine(current, "markban.json");
+            if (File.Exists(configPath))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(File.ReadAllText(configPath));
+                    if (doc.RootElement.TryGetProperty("rootPath", out var el))
+                    {
+                        var relPath = el.GetString();
+                        if (!string.IsNullOrWhiteSpace(relPath))
+                            return Path.GetFullPath(Path.Combine(current, relPath));
+                    }
+                }
+                catch (JsonException) { }
+            }
+
             var potential = Path.Combine(current, "work-items");
             if (Directory.Exists(potential)) return potential;
             current = Directory.GetParent(current)?.FullName;
