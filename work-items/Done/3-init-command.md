@@ -19,10 +19,10 @@ Idempotent -- re-running on an existing board fills in missing directories witho
 
 ## Acceptance Criteria
 
-- [ ] `markban init` creates `work-items/` with all 6 standard lane dirs
-- [ ] `markban init --path <dir>` creates custom dir and writes `markban.json` with `rootPath`
-- [ ] `markban init --name` adds a `name` field to `markban.json`
-- [ ] Re-running on existing board is safe -- no files overwritten or deleted
-- [ ] `--dry-run` prints planned actions without touching the filesystem
-- [ ] Existing `markban.json` is not overwritten; conflicting fields print a warning
-- [ ] Help text updated to include `init`
+- [x] `markban init` creates `work-items/` with all 6 standard lane dirs
+- [x] `markban init --path <dir>` creates custom dir and writes `markban.json` with `rootPath`
+- [x] `markban init --name` adds a `name` field to `markban.json`
+- [x] Re-running on existing board is safe -- no files overwritten or deleted
+- [x] `--dry-run` prints planned actions without touching the filesystem
+- [x] Existing `markban.json` is not overwritten; conflicting fields print a warning
+- [x] Help text updated to include `init`

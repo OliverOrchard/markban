@@ -12,7 +12,8 @@ if (rootIdx >= 0 && rootIdx + 1 < args.Length)
 bool needsRoot = effectiveArgs.Length > 0
     && !effectiveArgs.Contains("--help")
     && !effectiveArgs.Contains("-h")
-    && !(effectiveArgs[0] == "help");
+    && !(effectiveArgs[0] == "help")
+    && !(effectiveArgs[0] == "init");
 
 string rootPath;
 if (!needsRoot)

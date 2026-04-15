@@ -4,6 +4,7 @@ public static class CommandRouter
     [
         new WebRoute(),
         new HelpRoute(),
+        new InitRoute(),
         new ListRoute(),
         new NextRoute(),
         new ShowRoute(),

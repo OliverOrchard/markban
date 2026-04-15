@@ -255,6 +255,38 @@ public class RouteMatchingTests
         });
     }
 
+    #region InitRoute
+
+    [Fact]
+    public void InitRoute_Matches()
+    {
+        new InitRoute().TryRoute(["init"], DummyRoot).Should().BeTrue(
+            because: "InitRoute should match 'init' subcommand");
+    }
+
+    [Fact]
+    public void InitRoute_Matches_WithPathFlag()
+    {
+        new InitRoute().TryRoute(["init", "--path", "my-tasks"], DummyRoot).Should().BeTrue(
+            because: "InitRoute should match 'init --path <dir>'");
+    }
+
+    [Fact]
+    public void InitRoute_Matches_WithDryRun()
+    {
+        new InitRoute().TryRoute(["init", "--dry-run"], DummyRoot).Should().BeTrue(
+            because: "InitRoute should match 'init --dry-run'");
+    }
+
+    [Fact]
+    public void InitRoute_DoesNotMatch_UnrelatedArg()
+    {
+        new InitRoute().TryRoute(["list"], DummyRoot).Should().BeFalse(
+            because: "InitRoute should not match 'list'");
+    }
+
+    #endregion
+
     #region Test Infrastructure
 
     // Dummy root that doesn't need to exist — for routes that return false immediately

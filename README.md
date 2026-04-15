@@ -57,6 +57,10 @@ Planned — not yet available.
 ## Usage
 
 ```
+markban init                               Create work-items/ with standard lanes
+markban init --path my-tasks              Create custom dir + write markban.json
+markban init --name "My Project"          Set a display name in markban.json
+markban init --dry-run                    Preview without touching the filesystem
 markban list                               List all work items as JSON
 markban list --summary                     ID, slug, status only (saves tokens)
 markban list --folder Todo                 Filter to a lane
