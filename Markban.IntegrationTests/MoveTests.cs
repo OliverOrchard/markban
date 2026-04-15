@@ -27,7 +27,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; item 1 is in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1", "In Progress");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1", "In Progress");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -41,7 +41,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; item 1 is in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1", "Ideas");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1", "Ideas");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -55,7 +55,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; item 2 is in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "2", "Rejected");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "2", "Rejected");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -69,7 +69,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; max numbered item is 3
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "cool-idea", "Todo");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "cool-idea", "Todo");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -83,7 +83,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "nonexistent", "Todo");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "nonexistent", "Todo");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("not found");
@@ -95,7 +95,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; item 1 is already in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1", "Todo");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1", "Todo");
 
         // Assert
         result.StdOut.Should().Contain("already in");
@@ -107,7 +107,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1", "InvalidLane");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1", "InvalidLane");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("invalid");
@@ -119,7 +119,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; items 1 and 2 in Todo
 
         // Act
-        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1", "Ideas");
+        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1", "Ideas");
 
         // Assert
         var files = _ws.GetFiles("Todo");
@@ -138,7 +138,7 @@ public class MoveTests : IDisposable
         try
         {
             // Act — remove item 2; [1, 3] has a gap, should compact to [1, 2]
-            await CliRunner.RunAsync(_build.DllPath, ws2.Root, "--move", "2", "Ideas");
+            await CliRunner.RunAsync(_build.DllPath, ws2.Root, "move", "2", "Ideas");
 
             // Assert — item 1 untouched, item 3 shifted down to fill the gap
             ws2.FileExists("Todo", "1-alpha.md").Should().BeTrue(because: "item below the gap keeps its number");
@@ -163,7 +163,7 @@ public class MoveTests : IDisposable
         try
         {
             // Act — remove middle item; should compact [10, 12] -> [10, 11]
-            await CliRunner.RunAsync(_build.DllPath, ws2.Root, "--move", "11", "Rejected");
+            await CliRunner.RunAsync(_build.DllPath, ws2.Root, "move", "11", "Rejected");
 
             // Assert — compacted numbers stay in their original range, unaffected by Done item 50
             ws2.FileExists("Todo", "10-aaa.md").Should().BeTrue(because: "item below the gap should keep its number");
@@ -188,7 +188,7 @@ public class MoveTests : IDisposable
         try
         {
             // Act — remove item 6; [5, 7, 8] has a gap, should compact to [5, 6, 7]
-            await CliRunner.RunAsync(_build.DllPath, ws2.Root, "--move", "6", "Ideas");
+            await CliRunner.RunAsync(_build.DllPath, ws2.Root, "move", "6", "Ideas");
 
             // Assert — headings inside compacted files should match new numbers
             ws2.FileExists("Todo", "5-alpha.md").Should().BeTrue(because: "item below gap is untouched");
@@ -211,7 +211,7 @@ public class MoveTests : IDisposable
         // Arrange — workspace seeded in constructor; item 1 is 'first-task' in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "first-task", "In Progress");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "first-task", "In Progress");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -226,7 +226,7 @@ public class MoveTests : IDisposable
         _ws.AddItem("Rejected", "old-plan.md", "# Old Plan\n\n## Description\n\nRejected approach");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "old-plan", "Todo");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "old-plan", "Todo");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -241,7 +241,7 @@ public class MoveTests : IDisposable
         _ws.AddItem("Todo", "1a-sub-task.md", "# 1a - Sub Task\n\n## Description\n\nA sub-task");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1a", "Ideas");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1a", "Ideas");
 
         // Assert
         result.StdOut.Should().Contain("Successfully moved");
@@ -256,7 +256,7 @@ public class MoveTests : IDisposable
         _ws.AddItem("Todo", "1-dirty.md", "# 1 - Dirty\n\n## Description\n\nSome text \u2014 with em dash");
 
         // Act
-        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--move", "1", "In Progress");
+        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "move", "1", "In Progress");
 
         // Assert
         var content = _ws.ReadFile("In Progress", "1-dirty.md");

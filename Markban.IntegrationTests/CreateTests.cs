@@ -26,7 +26,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor with items 1-3
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "New Feature");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "New Feature");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created");
@@ -42,7 +42,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Testing Item", "--lane", "Testing");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Testing Item", "--lane", "Testing");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created");
@@ -55,7 +55,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor with items 1 and 2 in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Urgent Fix", "--priority");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Urgent Fix", "--priority");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created");
@@ -70,7 +70,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor with items 1 and 2 in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Inserted Task", "--after", "1");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Inserted Task", "--after", "1");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created");
@@ -84,7 +84,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Maybe Later", "--lane", "Ideas");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Maybe Later", "--lane", "Ideas");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created");
@@ -97,7 +97,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor; parent item 1 has no existing sub-items
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Sub Work", "--sub-item", "--parent", "1");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Sub Work", "--sub-item", "--parent", "1");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created sub-item");
@@ -108,11 +108,11 @@ public class CreateTests : IDisposable
     public async Task Create_SubItem_AfterExisting_ShiftsLetters()
     {
         // Arrange
-        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Sub A", "--sub-item", "--parent", "1");
+        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Sub A", "--sub-item", "--parent", "1");
         _ws.FileExists("Todo", "1a-sub-a.md").Should().BeTrue();
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Sub Between", "--sub-item", "--parent", "1", "--after", "1a");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Sub Between", "--sub-item", "--parent", "1", "--after", "1a");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created sub-item");
@@ -126,7 +126,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor with 'alpha-task' already present
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Alpha Task");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Alpha Task");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("already exists");
@@ -138,7 +138,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Boilerplate Check");
+        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Boilerplate Check");
 
         // Assert
         var content = _ws.ReadFile("Todo", "4-boilerplate-check.md");
@@ -153,7 +153,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Bad Approach", "--lane", "Rejected");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Bad Approach", "--lane", "Rejected");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created");
@@ -166,7 +166,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Orphan Sub", "--sub-item");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Orphan Sub", "--sub-item");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("--parent");
@@ -179,7 +179,7 @@ public class CreateTests : IDisposable
         _ws.AddItem("In Progress", "3-gamma-task.md", "# 3 - Gamma Task\n\n## Description\n\nIn progress");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Sub Gamma", "--sub-item", "--parent", "3", "--lane", "In Progress");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Sub Gamma", "--sub-item", "--parent", "3", "--lane", "In Progress");
 
         // Assert
         result.StdOut.Should().Contain("Successfully created sub-item");
@@ -192,7 +192,7 @@ public class CreateTests : IDisposable
         // Arrange — workspace seeded in constructor; no item with ID 99 in Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--create", "Orphan Insert", "--after", "99");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "create", "Orphan Insert", "--after", "99");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("not found", because: "--after with a non-existent ID should report an error");

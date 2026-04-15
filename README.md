@@ -25,9 +25,15 @@ work-items/
 
 **Sub-items** use letter suffixes: `12a-`, `12b-`, `12c-` group related tasks under a parent.
 
-**Cross-references** use `[slug]` or `WI-N` syntax between items: `[redesign-header]` or `WI-5` links to any item with that slug or ID. The `--sanitize` command auto-converts `WI-N` to `[slug]` form.
+**Cross-references** use `[slug]` or `WI-N` syntax between items: `[redesign-header]` or `WI-5` links to any item with that slug or ID. The `sanitize` command auto-converts `WI-N` to `[slug]` form.
 
 ## Installation
+
+### brew (macOS / Linux)
+
+```bash
+brew install OliverOrchard/markban/markban
+```
 
 ### dotnet tool
 
@@ -44,37 +50,42 @@ dotnet pack Markban.Cli/Markban.Cli.csproj -c Release -o ./nupkg
 dotnet tool install -g markban --add-source ./nupkg
 ```
 
-### winget / brew
+### winget
 
 Planned — not yet available.
 
 ## Usage
 
 ```
-markban --list                             List all work items as JSON
-markban --list --summary                   ID, slug, status only (saves tokens)
-markban --list --folder Todo               Filter to a lane
-markban --next                             Show highest priority Todo item
-markban --search "terms"                   Ranked search across slugs and IDs
-markban --search "terms" --full            Also scan full Markdown body content
-markban --move <id|slug> <lane>            Move an item between lanes
-markban --create "Title"                   Create a new work item
-markban --create "Title" --priority        Insert at top of Todo
-markban --create "Title" --after <id>      Insert after a specific item
-markban --create "Title" --sub-item --parent <id>  Create a sub-item
-markban --reorder <lane> <order>           Reorder by comma-separated IDs
-markban --reorder <lane> <order> --no-sub-items  Suppress sub-item grouping
-markban --reorder <lane> <order> --dry-run Preview without changing files
-markban --commit <id|slug> --tag feat --message "add login"
-markban --commit <id|slug> --tag feat --message "msg" --dry-run
-markban --check-links                      Find broken [slug] cross-references
-markban --check-links --include-ideas      Also check Ideas and Rejected lanes
-markban --references <slug>                Show what references this item
-markban --overview                         Compact progress summary
-markban --sanitize                         Fix Unicode and old ref formats
-markban --git-history <file>               Work item activity from git log
+markban list                               List all work items as JSON
+markban list --summary                     ID, slug, status only (saves tokens)
+markban list --folder Todo                 Filter to a lane
+markban next                               Show highest priority Todo item
+markban next-id                            Print the next safe work item number
+markban show <id|slug>                     Show a specific work item
+markban search "terms"                     Ranked search across slugs and IDs
+markban search "terms" --full              Also scan full Markdown body content
+markban move <id|slug> <lane>              Move an item between lanes
+markban create "Title"                     Create a new work item
+markban create "Title" --priority          Insert at top of Todo
+markban create "Title" --after <id>        Insert after a specific item
+markban create "Title" --sub-item --parent <id>  Create a sub-item
+markban reorder <lane> <order>             Reorder by comma-separated IDs
+markban reorder <lane> <order> --no-sub-items  Suppress sub-item grouping
+markban reorder <lane> <order> --dry-run   Preview without changing files
+markban commit <id|slug> --tag feat --message "add login"
+markban commit <id|slug> --tag feat --message "msg" --dry-run
+markban health                             Run all board diagnostics
+markban health check-links                 Find broken [slug] cross-references
+markban health check-links --include-ideas Also check Ideas and Rejected lanes
+markban health check-order                 Check for duplicate or missing IDs
+markban references <slug>                  Show what references this item
+markban overview                           Compact progress summary
+markban sanitize                           Fix Unicode and old ref formats
+markban git-history <file>                 Work item activity from git log
 markban web                                Start the web board UI
 markban web --port 8080 --no-open
+markban help
 markban --help
 ```
 
@@ -87,9 +98,9 @@ markban --help
 markban is designed to work well as a tool for coding agents (Claude, Copilot, etc.) alongside a human on the same board.
 
 - Use `--summary` to return only ID, slug, and status — avoids flooding the agent's context window with full Markdown bodies
-- Use `--search` before creating items to avoid duplicates
-- Use `--check-links` after bulk edits to validate cross-references
-- Use `--commit --dry-run` to validate a commit before executing it — always do this first
+- Use `search` before creating items to avoid duplicates
+- Use `health check-links` after bulk edits to validate cross-references
+- Use `commit --dry-run` to validate a commit before executing it — always do this first
 - The agent can use the CLI while you watch the board update live in the browser — no coordination needed, no locking
 
 ## Custom item template

@@ -1,20 +1,24 @@
 public class GitHistoryRoute : CommandRoute
 {
+    public override string? SubCommand => "git-history";
+
+    public override HelpEntry Help => new HelpEntry(
+        "git-history <file>",
+        "Show work item activity from git history of a file");
+
     public override bool TryRoute(string[] args, string rootPath)
     {
-        if (!args.Contains("--git-history"))
+        if (args.Length == 0 || args[0] != "git-history")
             return false;
 
-        var idx = Array.IndexOf(args, "--git-history");
-        if (idx + 1 >= args.Length)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Error: --git-history requires a file path argument.");
+            Console.Error.WriteLine("Error: git-history requires a file path argument.");
             return true;
         }
 
-        var filePath = args[idx + 1];
+        var filePath = args[1];
 
-        // Resolve the repo root from the work-items root (go up one level)
         var repoRoot = Path.GetDirectoryName(rootPath);
         if (repoRoot == null)
         {

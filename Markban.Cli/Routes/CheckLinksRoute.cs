@@ -1,14 +1,13 @@
+// CheckLinksRoute is superseded by HealthRoute (markban health check-links).
+// Kept in source for reference; not registered in CommandRouter.
 public class CheckLinksRoute : CommandRoute
 {
+    public override HelpEntry Help => new HelpEntry(
+        "health check-links [--include-ideas]",
+        "Find broken [slug] cross-references (use 'markban health')");
+
     public override bool TryRoute(string[] args, string rootPath)
     {
-        if (!args.Contains("--check-links"))
-            return false;
-
-        var includeIdeas = args.Contains("--include-ideas");
-        var items = WorkItemStore.LoadAll(rootPath);
-        var (broken, numericRefs) = CheckLinksCommand.Execute(rootPath, items, includeIdeas);
-        CheckLinksCommand.PrintResults(broken, numericRefs);
-        return true;
+        return false;
     }
 }

@@ -1,13 +1,19 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 public static class ListCommand
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     public static void Execute(string[] args, string rootPath)
     {
         var items = WorkItemStore.LoadAll(rootPath);
 
-        // Optional lane filter for --list
         if (args.Contains("--folder") || args.Contains("-f"))
         {
             var fi = Array.FindIndex(args, a => a == "--folder" || a == "-f");
@@ -19,59 +25,51 @@ public static class ListCommand
                     f.Equals(folderArg, StringComparison.OrdinalIgnoreCase) ||
                     f.Replace(" ", "").Equals(folderArg.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
                 if (normalized != null)
-                {
                     items = items.Where(i => i.Status == normalized).ToList();
-                }
                 else
-                {
                     Console.Error.WriteLine($"Warning: unknown folder '{folderArg}', showing all lanes (valid: Todo, InProgress, Testing, Done, Ideas, Rejected).");
-                }
             }
         }
 
         if (args.Contains("--summary") || args.Contains("-s"))
         {
             var summaries = items.Select(i => new WorkItemSummary(i.Id, i.Slug, i.Status)).ToList();
-            Console.WriteLine(JsonSerializer.Serialize(summaries, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else if (args.Contains("--id"))
-        {
-            var id = args[Array.IndexOf(args, "--id") + 1];
-            var item = items.FirstOrDefault(i => i.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
-            Console.WriteLine(JsonSerializer.Serialize(item, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else if (args.Contains("--slug"))
-        {
-            var slugPart = args[Array.IndexOf(args, "--slug") + 1].Replace(" ", "-").ToLower();
-            var item = items.FirstOrDefault(i => i.Slug.Contains(slugPart));
-            Console.WriteLine(JsonSerializer.Serialize(item, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else if (args.Contains("--search"))
-        {
-            var term = args[Array.IndexOf(args, "--search") + 1].ToLower();
-            var deep = args.Contains("--full");
-
-            var results = items
-                .Select(i => new { Item = i, Score = CalculateSearchScore(i, term, deep) })
-                .Where(x => x.Score > 0)
-                .OrderByDescending(x => x.Score)
-                .Select(x => x.Item)
-                .ToList();
-
-            Console.WriteLine(JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else if (args.Contains("--next"))
-        {
-            var next = items.Where(i => i.Status == "Todo")
-                .OrderBy(i => { var m = Regex.Match(i.Id, @"^(\d+)"); return m.Success ? int.Parse(m.Groups[1].Value) : int.MaxValue; })
-                .ThenBy(i => { var m = Regex.Match(i.Id, @"^\d+(.*)$"); return m.Success ? m.Groups[1].Value : i.Id; })
-                .FirstOrDefault();
-            Console.WriteLine(JsonSerializer.Serialize(next, new JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine(JsonSerializer.Serialize(summaries, JsonOptions));
         }
         else
         {
-            Console.WriteLine(JsonSerializer.Serialize(items, new JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine(JsonSerializer.Serialize(items, JsonOptions));
         }
+    }
+
+    public static void ExecuteShow(string rootPath, string identifier)
+    {
+        var items = WorkItemStore.LoadAll(rootPath);
+        var item = items.FirstOrDefault(i => i.Id.Equals(identifier, StringComparison.OrdinalIgnoreCase));
+        item ??= items.FirstOrDefault(i => i.Slug.Contains(identifier.Replace(" ", "-").ToLower()));
+        Console.WriteLine(JsonSerializer.Serialize(item, JsonOptions));
+    }
+
+    public static void ExecuteSearch(string rootPath, string term, bool deep)
+    {
+        var items = WorkItemStore.LoadAll(rootPath);
+        var results = items
+            .Select(i => new { Item = i, Score = CalculateSearchScore(i, term.ToLower(), deep) })
+            .Where(x => x.Score > 0)
+            .OrderByDescending(x => x.Score)
+            .Select(x => x.Item)
+            .ToList();
+        Console.WriteLine(JsonSerializer.Serialize(results, JsonOptions));
+    }
+
+    public static void ExecuteNext(string rootPath)
+    {
+        var items = WorkItemStore.LoadAll(rootPath);
+        var next = items.Where(i => i.Status == "Todo")
+            .OrderBy(i => { var m = Regex.Match(i.Id, @"^(\d+)"); return m.Success ? int.Parse(m.Groups[1].Value) : int.MaxValue; })
+            .ThenBy(i => { var m = Regex.Match(i.Id, @"^\d+(.*)$"); return m.Success ? m.Groups[1].Value : i.Id; })
+            .FirstOrDefault();
+        Console.WriteLine(JsonSerializer.Serialize(next, JsonOptions));
     }
 
     public static void ExecuteNextId(string rootPath)

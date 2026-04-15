@@ -1,23 +1,31 @@
 public class ReorderRoute : CommandRoute
 {
+    public override string? SubCommand => "reorder";
+
+    public override HelpEntry Help => new HelpEntry(
+        "reorder <lane> <order> [--no-sub-items] [--dry-run]",
+        "Reorder items within a lane by comma-separated IDs",
+        "  <lane>             target lane (e.g. Todo, \"In Progress\")\n" +
+        "  <order>            comma-separated IDs, highest priority first\n" +
+        "  --no-sub-items     exclude sub-items from reorder\n" +
+        "  --dry-run          preview without executing");
+
     public override bool TryRoute(string[] args, string rootPath)
     {
-        if (!args.Contains("--reorder"))
+        if (args.Length == 0 || args[0] != "reorder")
             return false;
 
-        var index = Array.IndexOf(args, "--reorder");
-        if (index + 2 >= args.Length)
+        if (args.Length < 3)
         {
-            Console.WriteLine("Usage: --reorder <folder> <order> [--no-sub-items] [--dry-run]");
-            Console.WriteLine("  folder: Todo, \"In Progress\", Testing, Done (also accepts InProgress)");
-            Console.WriteLine("  order:  comma-separated current item numbers, highest priority first");
+            PrintHelp();
             return true;
         }
-        var reorderFolder = args[index + 1];
-        var reorderOrder = args[index + 2];
+
+        var folder = args[1];
+        var orderArg = args[2];
         var noSubItems = args.Contains("--no-sub-items");
         var dryRun = args.Contains("--dry-run");
-        ReorderCommand.Execute(rootPath, reorderFolder, reorderOrder, noSubItems, dryRun);
+        ReorderCommand.Execute(rootPath, folder, orderArg, noSubItems, dryRun);
         return true;
     }
 }

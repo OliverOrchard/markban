@@ -25,7 +25,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "3-gamma-task.md", "# 3 - Gamma Task\n\n## Description\n\nThird");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "3,1,2");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "3,1,2");
 
         // Assert
         result.StdOut.Should().Contain("file(s) renamed");
@@ -41,7 +41,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "2-beta-task.md", "# 2 - Beta Task\n\n## Description\n\nSecond");
 
         // Act
-        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "2,1");
+        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "2,1");
 
         // Assert
         var betaContent = _ws.ReadFile("Todo", "1-beta-task.md");
@@ -60,7 +60,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "2-beta-task.md", "# 2 - Beta Task\n\n## Description\n\nSecond");
 
         // Act
-        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "2,1");
+        await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "2,1");
 
         // Assert
         var files = _ws.GetFiles("Todo");
@@ -78,7 +78,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "2-beta-task.md", "# 2 - Beta Task\n\n## Description\n\nSecond");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "2,1", "--no-sub-items");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "2,1", "--no-sub-items");
 
         // Assert
         result.StdOut.Should().Contain("excluded from reorder");
@@ -93,7 +93,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "2-beta-task.md", "# 2 - Beta Task\n\n## Description\n\nSecond");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "2,1", "--dry-run");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "2,1", "--dry-run");
 
         // Assert
         result.StdOut.Should().Contain("Dry run");
@@ -107,7 +107,7 @@ public class ReorderTests : IDisposable
         // Arrange — empty workspace
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "FakeFolder", "1,2");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "FakeFolder", "1,2");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("invalid");
@@ -120,7 +120,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "1-alpha-task.md", "# 1 - Alpha Task\n\n## Description\n\nFirst");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "1,99");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "1,99");
 
         // Assert
         result.StdOut.Should().Contain("Error").And.Contain("not found");
@@ -132,7 +132,7 @@ public class ReorderTests : IDisposable
         // Arrange — no items in Testing folder
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Testing", "1,2");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Testing", "1,2");
 
         // Assert
         result.StdOut.Should().Contain("No work items found");
@@ -147,7 +147,7 @@ public class ReorderTests : IDisposable
         _ws.AddItem("Todo", "3-gamma-task.md", "# 3 - Gamma Task\n\n## Description\n\nThird");
 
         // Act — only mention item 3; items 1 and 2 should follow in their original order
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--reorder", "Todo", "3");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "3");
 
         // Assert
         result.StdOut.Should().Contain("file(s) renamed");

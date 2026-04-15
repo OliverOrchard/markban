@@ -24,7 +24,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Done", "2-beta.md", "# 2 - Beta\n\nDone");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links");
 
         // Assert
         result.StdOut.Should().Contain("No broken links found",
@@ -39,7 +39,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "2-depends.md", "# 2 - Depends\n\nNeeds [water-phsyics]");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links");
 
         // Assert
         result.StdOut.Should().Contain("[water-phsyics]",
@@ -57,7 +57,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "1-alpha.md", "# 1 - Alpha\n\nSee [completely-unrelated-thing]");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links");
 
         // Assert
         result.StdOut.Should().Contain("No potential matches found",
@@ -71,8 +71,8 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("ideas", "cool-idea.md", "# Cool Idea\n\nSee [missing-feature]");
 
         // Act
-        var without = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links");
-        var with = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links", "--include-ideas");
+        var without = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links");
+        var with = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links", "--include-ideas");
 
         // Assert
         without.StdOut.Should().Contain("No broken links found",
@@ -89,7 +89,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "2-beta.md", "# 2 - Beta\n\n## Depends On\n- 1 (Alpha)");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links");
 
         // Assert
         result.StdOut.Should().Contain("bare numeric reference",
@@ -106,7 +106,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "11-task.md", "# 11 - Task\n\nSee feature (10) for details");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--check-links");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "health", "check-links");
 
         // Assert
         result.StdOut.Should().Contain("bare numeric reference",
@@ -121,7 +121,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         // Arrange — no file path provided
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--git-history");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "git-history");
 
         // Assert
         result.StdErr.Should().Contain("requires a file path",
@@ -139,7 +139,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Done", "3-unrelated.md", "# 3 - Unrelated\n\nNo refs");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references", "water-physics");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references", "water-physics");
 
         // Assert
         result.StdOut.Should().Contain("1 reference(s)",
@@ -155,7 +155,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "1-alpha.md", "# 1 - Alpha\n\nNo links");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references", "alpha");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references", "alpha");
 
         // Assert
         result.StdOut.Should().Contain("No references to [alpha] found",
@@ -170,8 +170,8 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("ideas", "cool-idea.md", "# Cool Idea\n\nDepends on: [feature]");
 
         // Act
-        var without = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references", "feature");
-        var with = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references", "feature", "--include-ideas");
+        var without = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references", "feature");
+        var with = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references", "feature", "--include-ideas");
 
         // Assert
         without.StdOut.Should().Contain("No references",
@@ -186,7 +186,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         // Arrange — no slug provided
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references");
 
         // Assert
         result.StdErr.Should().Contain("requires a slug",
@@ -201,7 +201,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "2-depends.md", "# 2 - Depends\n\nNeeds [water-physics]");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references", "1");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references", "1");
 
         // Assert
         result.StdOut.Should().Contain("1 reference(s)",
@@ -217,7 +217,7 @@ public class CheckLinksAndGitHistoryTests : IDisposable
         _ws.AddItem("Todo", "1-alpha.md", "# 1 - Alpha\n\nNo links");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--references", "999");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "references", "999");
 
         // Assert
         result.StdErr.Should().Contain("could not resolve",

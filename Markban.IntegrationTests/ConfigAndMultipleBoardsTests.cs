@@ -41,7 +41,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         var projectDir = ws.CreateProjectDir();
 
         // Act: run the CLI from the project dir WITHOUT --root
-        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "--list", "--summary");
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "list", "--summary");
 
         // Assert: board was found through the config file
         result.StdErr.Should().BeEmpty(because: "CLI should locate the board via markban.json without --root");
@@ -68,7 +68,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         File.WriteAllText(Path.Combine(projectDir, "markban.json"), """{"rootPath": "./boards"}""");
 
         // Act
-        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "--list", "--summary");
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "list", "--summary");
 
         // Assert
         result.StdErr.Should().BeEmpty();
@@ -94,7 +94,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         File.WriteAllText(Path.Combine(projectDir, "markban.json"), """{"git": {"enabled": false}}""");
 
         // Act
-        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "--list", "--summary");
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "list", "--summary");
 
         // Assert
         result.StdErr.Should().BeEmpty(because: "CLI should fall back to work-items/ discovery when rootPath is absent");
@@ -118,7 +118,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
             "# 1 - No Config\n\n## Description\n\nFound without any config");
 
         // Act
-        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "--list", "--summary");
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, projectDir, "list", "--summary");
 
         // Assert
         result.StdErr.Should().BeEmpty(because: "existing walk-up discovery should still work without any config file");
@@ -146,7 +146,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         ws.AddItem("Todo", "1-walk-up.md", "# 1 - Walk Up\n\n## Description\n\nFound via parent config");
 
         // Act: run from the deep subdirectory — FindRoot() must walk up to projectDir
-        var result = await CliRunner.RunInDirAsync(_build.DllPath, subDir, "--list", "--summary");
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, subDir, "list", "--summary");
 
         // Assert
         result.StdErr.Should().BeEmpty(because: "walk-up should find markban.json in the parent directory");
@@ -172,8 +172,8 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         var projectB = wsB.CreateProjectDir();
 
         // Act: list each board independently
-        var resultA = await CliRunner.RunInDirAsync(_build.DllPath, projectA, "--list", "--summary");
-        var resultB = await CliRunner.RunInDirAsync(_build.DllPath, projectB, "--list", "--summary");
+        var resultA = await CliRunner.RunInDirAsync(_build.DllPath, projectA, "list", "--summary");
+        var resultB = await CliRunner.RunInDirAsync(_build.DllPath, projectB, "list", "--summary");
 
         // Assert: each board sees only its own items
         resultA.StdErr.Should().BeEmpty();
@@ -203,7 +203,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         var projectB = wsB.CreateProjectDir();
 
         // Act: create a new item on board A only
-        var createResult = await CliRunner.RunInDirAsync(_build.DllPath, projectA, "--create", "New On A");
+        var createResult = await CliRunner.RunInDirAsync(_build.DllPath, projectA, "create", "New On A");
 
         // Assert: item was created on board A
         createResult.StdOut.Should().Contain("Successfully created",
@@ -229,7 +229,7 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         var projectB = wsB.CreateProjectDir();
 
         // Act: move item 1 on board A to In Progress
-        var moveResult = await CliRunner.RunInDirAsync(_build.DllPath, projectA, "--move", "1", "InProgress");
+        var moveResult = await CliRunner.RunInDirAsync(_build.DllPath, projectA, "move", "1", "InProgress");
 
         // Assert: board A item moved
         moveResult.StdOut.Should().Contain("Successfully moved",

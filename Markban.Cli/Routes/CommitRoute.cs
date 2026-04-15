@@ -1,18 +1,41 @@
 public class CommitRoute : CommandRoute
 {
+    public override string? SubCommand => "commit";
+
+    public override HelpEntry Help => new HelpEntry(
+        "commit <id|slug> --tag <tag> --message \"msg\" [--dry-run]",
+        "Move item to Done, then git add / commit / push",
+        "  <id|slug>          required - item to commit\n" +
+        $"  --tag <tag>        valid: {string.Join(", ", CommitCommand.ValidTags)}\n" +
+        "  --message \"msg\"    commit message\n" +
+        "  --dry-run          preview without executing");
+
+    private static readonly HashSet<string> KnownFlags = new(StringComparer.OrdinalIgnoreCase)
+        { "--tag", "--message", "--dry-run" };
+
+    private static readonly HashSet<string> ValueFlags = new(StringComparer.OrdinalIgnoreCase)
+        { "--tag", "--message" };
+
     public override bool TryRoute(string[] args, string rootPath)
     {
-        if (!args.Contains("--commit"))
+        if (args.Length == 0 || args[0] != "commit")
             return false;
 
-        var idx = Array.IndexOf(args, "--commit");
-        if (idx + 1 >= args.Length)
+        if (args.Length < 2)
         {
-            PrintUsage();
+            PrintHelp();
             return true;
         }
 
-        var identifier = args[idx + 1];
+        var identifier = args[1];
+
+        var unknownFlag = FindUnknownFlag(args, 2, KnownFlags, ValueFlags);
+        if (unknownFlag != null)
+        {
+            Console.Error.WriteLine($"Unknown flag '{unknownFlag}'.");
+            PrintHelp();
+            return true;
+        }
 
         string? tag = null;
         if (args.Contains("--tag"))
@@ -30,7 +53,7 @@ public class CommitRoute : CommandRoute
 
         if (string.IsNullOrWhiteSpace(tag) || string.IsNullOrWhiteSpace(message))
         {
-            PrintUsage();
+            PrintHelp();
             return true;
         }
 
@@ -40,9 +63,4 @@ public class CommitRoute : CommandRoute
         return true;
     }
 
-    private static void PrintUsage()
-    {
-        Console.Error.WriteLine("Usage: --commit <id|slug> --tag <tag> --message \"message\" [--dry-run]");
-        Console.Error.WriteLine($"Valid tags: {string.Join(", ", CommitCommand.ValidTags)}");
-    }
 }

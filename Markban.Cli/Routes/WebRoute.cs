@@ -2,6 +2,14 @@ using Markban;
 
 public class WebRoute : CommandRoute
 {
+    public override string? SubCommand => "web";
+
+    public override HelpEntry Help => new HelpEntry(
+        "web [--port <port>] [--no-open]",
+        "Start the web board UI (default port: 5000)",
+        "  --port <port>      server port (default: 5000)\n" +
+        "  --no-open          do not open the browser automatically");
+
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "web")

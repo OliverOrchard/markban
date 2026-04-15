@@ -11,7 +11,8 @@ if (rootIdx >= 0 && rootIdx + 1 < args.Length)
 // Commands that don't need a work-items directory can run anywhere
 bool needsRoot = effectiveArgs.Length > 0
     && !effectiveArgs.Contains("--help")
-    && !effectiveArgs.Contains("-h");
+    && !effectiveArgs.Contains("-h")
+    && !(effectiveArgs[0] == "help");
 
 string rootPath;
 if (!needsRoot)
@@ -27,12 +28,12 @@ else
     catch (DirectoryNotFoundException)
     {
         Console.Error.WriteLine("Error: No 'work-items' directory found in this directory or any parent.");
-        Console.Error.WriteLine("Run 'markban --help' for usage, or create a work-items/ folder to get started.");
+        Console.Error.WriteLine("Run 'markban help' for usage, or create a work-items/ folder to get started.");
         return;
     }
 }
 
 if (!CommandRouter.Route(effectiveArgs, rootPath))
 {
-    Console.WriteLine("Unknown command. Use --help for usage.");
+    Console.WriteLine("Unknown command. Use 'markban help' for usage.");
 }

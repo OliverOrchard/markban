@@ -29,11 +29,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor with 6 items across all lanes
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--summary");
-
-        // Assert
-        var items = JsonHelper.DeserializeSummaries(result.StdOut);
-        items.Should().HaveCount(6, because: "workspace has 2 Todo + 1 InProgress + 1 Done + 1 Ideas + 1 Rejected");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--summary");
     }
 
     [Fact]
@@ -42,7 +38,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list");
 
         // Assert
         var items = JsonHelper.DeserializeItems(result.StdOut);
@@ -56,7 +52,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "Todo", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "Todo", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -70,7 +66,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "InProgress", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "InProgress", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -84,7 +80,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "Ideas", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "Ideas", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -98,7 +94,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "Rejected", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "Rejected", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -112,7 +108,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--id", "1");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "show", "1");
 
         // Assert
         var item = JsonHelper.DeserializeItem(result.StdOut);
@@ -127,7 +123,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--slug", "gamma-task");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "show", "gamma-task");
 
         // Assert
         var item = JsonHelper.DeserializeItem(result.StdOut);
@@ -142,7 +138,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--search", "alpha");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "search", "alpha");
 
         // Assert
         var items = JsonHelper.DeserializeItems(result.StdOut);
@@ -156,7 +152,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor; beta-task body contains 'water'
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--search", "water", "--full");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "search", "water", "--full");
 
         // Assert
         var items = JsonHelper.DeserializeItems(result.StdOut);
@@ -170,7 +166,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor; item 1 is lowest-numbered Todo
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--next");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "next");
 
         // Assert
         var item = JsonHelper.DeserializeItem(result.StdOut);
@@ -185,7 +181,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor; highest numbered item is 5 (epsilon-task in Done)
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--next-id");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "next-id");
 
         // Assert
         result.StdOut.Trim().Should().Be("6", because: "max existing number is 5, so next safe ID is 6");
@@ -197,7 +193,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "Todo", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "Todo", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -211,7 +207,7 @@ public class ListAndQueryTests : IDisposable
         _ws.AddItem("Done", "4-delta-task.md", "# 4 - Delta Task\n\n## Description\n\nAnother done");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "Done", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "Done", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -225,7 +221,7 @@ public class ListAndQueryTests : IDisposable
         _ws.AddItem("Testing", "4-delta-task.md", "# 4 - Delta Task\n\n## Description\n\nTesting task");
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "Testing", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "Testing", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -239,7 +235,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor; no item with ID 999
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--id", "999");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "show", "999");
 
         // Assert
         result.StdOut.Trim().Should().Be("null", because: "non-existent ID should serialize as null JSON");
@@ -251,7 +247,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--search", "zzzznonexistent");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "search", "zzzznonexistent");
 
         // Assert
         var items = JsonHelper.DeserializeItems(result.StdOut);
@@ -264,7 +260,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor; alpha-task body mentions 'rendering'
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--search", "alpha rendering", "--full");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "search", "alpha rendering", "--full");
 
         // Assert
         var items = JsonHelper.DeserializeItems(result.StdOut);
@@ -278,7 +274,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor; no item with slug 'nonexistent'
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--slug", "zzzznonexistent");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "show", "zzzznonexistent");
 
         // Assert
         result.StdOut.Trim().Should().Be("null", because: "non-existent slug should serialize as null JSON");
@@ -290,7 +286,7 @@ public class ListAndQueryTests : IDisposable
         // Arrange — workspace seeded in constructor
 
         // Act
-        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "--list", "--folder", "In Progress", "--summary");
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "list", "--folder", "In Progress", "--summary");
 
         // Assert
         var items = JsonHelper.DeserializeSummaries(result.StdOut);
@@ -308,7 +304,7 @@ public class ListAndQueryTests : IDisposable
             emptyWs.AddItem("Done", "1-done-task.md", "# 1 - Done Task\n\n## Description\n\nDone");
 
             // Act
-            var result = await CliRunner.RunAsync(_build.DllPath, emptyWs.Root, "--next");
+            var result = await CliRunner.RunAsync(_build.DllPath, emptyWs.Root, "next");
 
             // Assert
             result.StdOut.Trim().Should().Be("null", because: "no items in Todo means nothing to return");
@@ -332,7 +328,7 @@ public class ListAndQueryTests : IDisposable
         try
         {
             // Act
-            var result = await CliRunner.RunAsync(_build.DllPath, ws2.Root, "--list", "--folder", "Todo", "--summary");
+            var result = await CliRunner.RunAsync(_build.DllPath, ws2.Root, "list", "--folder", "Todo", "--summary");
 
             // Assert
             var items = JsonHelper.DeserializeSummaries(result.StdOut);

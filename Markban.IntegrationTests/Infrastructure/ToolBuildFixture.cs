@@ -33,7 +33,7 @@ public class ToolBuildFixture : IAsyncLifetime
         if (proc.ExitCode != 0)
             throw new InvalidOperationException($"Failed to build WorkItemViewer:\n{stderr}");
 
-        DllPath = Path.Combine(projectDir, "bin", "Debug", "net10.0", "Markban.Cli.dll");
+        DllPath = Path.Combine(projectDir, "bin", "Debug", "net10.0", "markban.dll");
         if (!File.Exists(DllPath))
             throw new FileNotFoundException($"Built DLL not found at: {DllPath}");
     }
