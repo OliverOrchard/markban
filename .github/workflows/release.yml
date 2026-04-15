@@ -1,0 +1,200 @@
+name: Release
+
+# Triggered by pushing a version tag: git tag v0.2.0 && git push origin v0.2.0
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: write   # needed to create GitHub Releases
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Build a self-contained single-file binary for each platform
+  # ──────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: osx-arm64
+            os: macos-latest
+          - rid: osx-x64
+            os: macos-latest   # .NET cross-compiles to x64 from an arm64 runner
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: linux-arm64
+            os: ubuntu-latest  # .NET cross-compiles to arm64 from an x64 runner
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Publish self-contained binary
+        run: |
+          dotnet publish Markban.Cli/Markban.Cli.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./out
+
+      - name: Package tarball
+        run: |
+          mkdir staging
+          cp out/markban staging/
+          chmod +x staging/markban
+          cp -r out/wwwroot staging/
+          tar -czf markban-${{ matrix.rid }}.tar.gz -C staging .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: markban-${{ matrix.rid }}
+          path: markban-${{ matrix.rid }}.tar.gz
+
+  # ──────────────────────────────────────────────────────────────
+  # Create a GitHub Release and attach all tarballs
+  # ──────────────────────────────────────────────────────────────
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version (strip leading 'v')
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: markban-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: markban-*.tar.gz
+          generate_release_notes: true
+
+  # ──────────────────────────────────────────────────────────────
+  # Update the Homebrew tap formula in OliverOrchard/homebrew-markban
+  #
+  # Prerequisites (one-time setup):
+  #  1. Create a GitHub repo named  OliverOrchard/homebrew-markban
+  #     (see homebrew-tap/Formula/markban.rb in this repo for the
+  #      initial formula to commit there).
+  #  2. Generate a Personal Access Token (classic) with 'repo' scope
+  #     and add it as a secret named  HOMEBREW_TAP_TOKEN  in this repo
+  #     (Settings → Secrets → Actions).
+  # ──────────────────────────────────────────────────────────────
+  update-tap:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: markban-*
+          merge-multiple: true
+
+      - name: Compute SHA256 hashes
+        id: sha256
+        run: |
+          echo "osx_arm64=$(sha256sum markban-osx-arm64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "osx_x64=$(sha256sum markban-osx-x64.tar.gz    | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "linux_x64=$(sha256sum markban-linux-x64.tar.gz  | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "linux_arm64=$(sha256sum markban-linux-arm64.tar.gz | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: OliverOrchard/homebrew-markban
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Write updated formula
+        env:
+          VERSION:     ${{ needs.release.outputs.version }}
+          TAG:         ${{ github.ref_name }}
+          OSX_ARM64:   ${{ steps.sha256.outputs.osx_arm64 }}
+          OSX_X64:     ${{ steps.sha256.outputs.osx_x64 }}
+          LINUX_X64:   ${{ steps.sha256.outputs.linux_x64 }}
+          LINUX_ARM64: ${{ steps.sha256.outputs.linux_arm64 }}
+        run: |
+          mkdir -p tap/Formula
+          python3 << 'PYEOF'
+          import os, pathlib, textwrap
+
+          v          = os.environ['VERSION']
+          tag        = os.environ['TAG']
+          osx_arm64  = os.environ['OSX_ARM64']
+          osx_x64    = os.environ['OSX_X64']
+          linux_x64  = os.environ['LINUX_X64']
+          linux_arm64= os.environ['LINUX_ARM64']
+          base       = f"https://github.com/OliverOrchard/markban/releases/download/{tag}"
+
+          formula = textwrap.dedent(f"""\
+          class Markban < Formula
+            desc "Markdown board — a file-based work item tracker with CLI and local web UI"
+            homepage "https://github.com/OliverOrchard/markban"
+            version "{v}"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "{base}/markban-osx-arm64.tar.gz"
+                sha256 "{osx_arm64}"
+              end
+              on_intel do
+                url "{base}/markban-osx-x64.tar.gz"
+                sha256 "{osx_x64}"
+              end
+            end
+
+            on_linux do
+              on_intel do
+                url "{base}/markban-linux-x64.tar.gz"
+                sha256 "{linux_x64}"
+              end
+              on_arm do
+                url "{base}/markban-linux-arm64.tar.gz"
+                sha256 "{linux_arm64}"
+              end
+            end
+
+            def install
+              libexec.install "markban", "wwwroot"
+              bin.install_symlink libexec/"markban"
+            end
+
+            test do
+              assert_match "markban", shell_output("#{{bin}}/markban --help 2>&1")
+            end
+          end
+          """)
+
+          pathlib.Path("tap/Formula/markban.rb").write_text(formula)
+          print("Formula written.")
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          cd tap
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/markban.rb
+          git diff --cached --quiet && echo "No changes." || \
+            git commit -m "markban ${{ needs.release.outputs.version }}" && git push

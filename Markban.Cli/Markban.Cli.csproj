@@ -8,6 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <IsPackable>true</IsPackable>
     <CompressionEnabled>false</CompressionEnabled>
+    <AssemblyName>markban</AssemblyName>
     <ToolCommandName>markban</ToolCommandName>
     <PackageId>markban</PackageId>
     <Version>0.1.0</Version>
