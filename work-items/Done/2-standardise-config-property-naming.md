@@ -41,11 +41,11 @@ This must land before items 5, 5a, 5b, 21 ship.
 
 ## Acceptance Criteria
 
-- [ ] `markban.json` schema documented with all reserved lane properties and their types
-- [ ] `markban init` output uses all standardised names
-- [ ] `type` enum values are `"ready"` and `"done"` -- no other role types at this stage
-- [ ] `pickable: false` is the opt-out mechanism for non-workflow lanes
-- [ ] `wip` is the property name for WIP limits
-- [ ] Git config uses `pullOnStart` and `checkoutOnDone`
-- [ ] Documentation and help text consistent throughout
-- [ ] Items 5, 5b, 21 updated to reference final schema names
+- [x] `markban.json` schema documented with all reserved lane properties and their types
+- [x] `markban init` output uses all standardised names
+- [x] `type` enum values are `"ready"` and `"done"` -- no other role types at this stage
+- [x] `pickable: false` is the opt-out mechanism for non-workflow lanes
+- [x] `wip` is the property name for WIP limits
+- [x] Git config uses `pullOnStart` and `checkoutOnDone`
+- [x] Documentation and help text consistent throughout
+- [x] Items 5, 5b, 21 updated to reference final schema names

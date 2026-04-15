@@ -131,6 +131,15 @@ Place a `markban.json` in your project root to configure:
 ```json
 {
   "rootPath": "./work-items",
+  "name": "My Project",
+  "lanes": [
+    { "name": "Todo",        "ordered": true,  "type": "ready" },
+    { "name": "In Progress", "ordered": true },
+    { "name": "Testing",     "ordered": true },
+    { "name": "Done",        "ordered": true,  "type": "done" },
+    { "name": "Ideas",       "ordered": false, "pickable": false },
+    { "name": "Rejected",    "ordered": false, "pickable": false }
+  ],
   "git": {
     "enabled": true
   },
@@ -140,7 +149,49 @@ Place a `markban.json` in your project root to configure:
 }
 ```
 
-Git integration is enabled by default. Set `git.enabled` to `false` or pass `--no-git` to `markban --commit` to skip the git add/commit/push steps.
+### Property reference
+
+**Top-level**
+
+| Property | Type | Description |
+|---|---|---|
+| `rootPath` | string | Path to the board directory, relative to `markban.json`. Defaults to `work-items/` in the same directory. |
+| `name` | string | Display name for the board. |
+| `lanes` | array | Lane definitions. When omitted, the standard lanes above are used. |
+
+**Lane properties** (`lanes[*]`)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `name` | string | — | Directory name of the lane. |
+| `ordered` | boolean | — | `true` = numbered filenames (`1-slug.md`); `false` = slug-only filenames. |
+| `type` | `"ready"` \| `"done"` | omit | `"ready"` = commitment lane (`create` defaults here, `next` reads from here). `"done"` = terminal lane (`commit` moves here). Omit for neutral lanes. |
+| `pickable` | boolean | `true` | `false` excludes this lane from `next` and `create` defaults. Use for holding lanes (`Ideas`, `Rejected`). |
+| `wip` | number | none | Maximum items allowed in this lane. No property = no limit. |
+
+Array order drives the `progress` command (advance an item one lane forward).
+
+**`git` properties**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | boolean | `true` | Run `git add / commit / push` on `markban commit`. Set to `false` to manage git separately. |
+
+**`git.featureBranches` properties** *(planned — not yet implemented)*
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | boolean | `false` | Activates feature-branch workflow mode. |
+| `mainBranch` | string | `"main"` | Base branch for new feature branches. |
+| `commitStrategy` | `"single"` \| `"multiple"` \| `"squash"` | `"squash"` | How commits are handled on `markban commit`. |
+| `pullOnStart` | boolean | `true` | Pull `mainBranch` before creating a feature branch. |
+| `checkoutOnDone` | boolean | `true` | Check out and pull `mainBranch` after a PR is created. |
+
+**Naming conventions**
+
+- All property names are **camelCase**.
+- No `is` prefix on booleans (`pickable`, not `isPickable`).
+- Enum string values are **lowercase** (`"ready"`, `"done"`).
 
 ## License
 

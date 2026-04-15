@@ -36,7 +36,7 @@ An optional mode where markban manages a full feature branch lifecycle per work 
 - `multiple` -- user commits freely during work. `--commit` opens a PR from the existing branch commits with no additional commit. History preserved as-is.
 - `squash` -- user commits freely. `--commit` squashes all branch commits into one clean commit with the configured message format, then opens PR.
 
-**`checkoutMainOnDone: true`** -- after the PR is created, automatically runs `git checkout <mainBranch> && git pull`. User lands back on a clean, up-to-date main ready for the next `--start`.
+**`checkoutOnDone: true`** -- after the PR is created, automatically runs `git checkout <mainBranch> && git pull`. User lands back on a clean, up-to-date main ready for the next `--start`.
 
 **PR creation is delegated to the platform CLI** -- see [pr-creation-on-commit]. markban does not own API auth.
 

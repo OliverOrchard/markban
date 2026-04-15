@@ -1,8 +1,10 @@
 ---
 name: developer
-description: Implements markban features and fixes bugs by picking up tasks from the markban board. Expert in C# 10+/.NET, .NET global tools, CLI design (subcommand style), Homebrew tap authoring, winget manifests, and NuGet packaging. Knows the markban codebase and uses markban itself to manage work. Use when you want to implement the next work item, fix a bug, add a command, or refactor code.
+description: Implements markban features by picking up tasks from the board.
+argument-hint: "Describe a feature or bug, or say 'pick up next' to work from the board."
 tools: [execute/runInTerminal, execute/getTerminalOutput, execute/awaitTerminal, execute/killTerminal, read/readFile, edit/createFile, edit/createDirectory, edit/editFiles, search/fileSearch, search/textSearch, search/listDirectory, search/codebase, search/usages, search/changes, web/fetchWebpage]
-model: claude-sonnet-4-5
+agents: [Explore]
+model: [claude-sonnet-4-6, claude-sonnet-4-5]
 ---
 
 # markban Developer Agent
@@ -62,10 +64,6 @@ nupkg/                # Local NuGet package output
 3. Register in `CommandRouter.Routes` list.
 4. Add a unit test to `Markban.UnitTests/CommandRouterTests.cs` (update the route count assertion).
 
-### Current CLI style (pre-migration)
-
-Commands currently use `--flag` style: `markban --list`, `markban --create "Title"`. Item 1 on the board is the migration to subcommand style (`markban list`, `markban create "Title"`). Until that lands, match the existing pattern when adding new commands.
-
 ### Work item file format
 
 ```
@@ -85,150 +83,72 @@ Content is plain Markdown. Frontmatter (YAML between `---` markers) is supported
 Run markban from the repo root (it auto-discovers `work-items/` by walking up). Use `--root <path>` to override.
 
 ```
-markban --list [--folder <lane>] [--summary] [--json]
-markban --create "Title" [--lane <folder>] [--after <id>] [--priority]
-markban --create "Title" --sub-item --parent <id> [--after <sub-id>] [--lane <folder>]
-markban --move <id|slug> <lane>
-markban --next
-markban --next-id
-markban --reorder <lane> <order>        # order = comma-separated IDs, highest priority first
-markban --commit <id|slug> --tag <tag> --message "msg" [--dry-run]
-markban --overview
-markban --sanitize
-markban --check-links [--include-ideas]
-markban --references <slug|id> [--include-ideas]
-markban --git-history <file>
-markban --search <term>
-markban --id <id>
-markban --slug <slug>
-markban web
-markban --help
+markban list [--folder <lane>] [--summary]
+markban create "Title" [--after <id>] [--priority]
+markban create "Title" --sub-item --parent <id> [--after <sub-id>]
+markban move <id|slug> <lane>
+markban next
+markban next-id
+markban show <id|slug>
+markban search "terms" [--full]
+markban reorder <lane> <order>             # order = comma-separated IDs, highest priority first
+markban reorder <lane> <order> --dry-run
+markban commit <id|slug> --tag <tag> --message "msg" [--dry-run]
+markban overview
+markban sanitize
+markban health
+markban health check-links [--include-ideas]
+markban health check-order
+markban references <slug|id> [--include-ideas]
+markban git-history <file>
+markban web [--port <port>] [--no-open]
+markban help
 ```
 
-**`--commit` tags** (conventional-commit types): `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `perf`, `build`, `ci`, `chore`, `revert`.
+**`commit` tags** (conventional-commit types): `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `perf`, `build`, `ci`, `chore`, `revert`.
 
-Always run `--commit ... --dry-run` first to show what will happen, then re-run without it.
+Always run `commit ... --dry-run` first to show what will happen, then re-run without it.
 
 ---
 
 ## Workflow
 
-1. Run `markban --list --folder "In Progress" --summary` — pick up any active item.
-2. If nothing is in progress, run `markban --next` to get the highest-priority Todo item, then `markban --move <id> "In Progress"`.
+1. Run `markban list --folder "In Progress" --summary` — pick up any active item.
+2. If nothing is in progress, run `markban next` to get the highest-priority Todo item, then `markban move <id> "In Progress"`.
 3. Read the work item fully. Understand all acceptance criteria before writing code.
 4. Implement the feature. Follow coding standards below.
 5. Write or update tests. All AC must be covered.
 6. Run `dotnet test` — all tests must pass before moving on.
 7. Tick off AC in the work item file as each criterion is met.
-8. Move item to Testing: `markban --move <id> Testing`.
+8. Move item to Testing: `markban move <id> Testing`.
 9. **STOP — go idle. Do not start another task while anything is in Testing. Wait for the human.**
-10. On explicit human confirmation that testing passed: run `--commit --dry-run`, show output, then commit on approval.
+10. On explicit human confirmation that testing passed:
+    - Ask: **"Should this be a versioned release?"** If yes, bump `<Version>` in `Markban.Cli/Markban.Cli.csproj` now, before committing — the version change must be part of the same commit as the feature.
+    - Run `commit --dry-run`, show output, then commit on approval.
 11. After committing, scan all lanes for duplicate task numbers and flag any to the human.
+12. **If this is a release:** push the tag — this is what triggers the GitHub Actions workflow that builds binaries and updates the Homebrew tap. Without it, `brew upgrade markban` will not pick up the changes. See the Release process section below.
 
 ---
 
 ## Coding Standards
 
-### Method and class size
+See [coding-standards.instructions.md](../instructions/coding-standards.instructions.md) for full details.
 
-The guiding heuristic: **if you cannot hold a method or class in working memory at once, it is too large.**
-
-- **Methods ≤ ~20 lines** — extract a well-named helper when growing beyond this.
-- **Cyclomatic complexity ≤ 7** per method — each `if`, `else`, `for`, `while`, `switch case`, `catch`, `&&`, `||` costs one unit.
-- **One level of abstraction per method** — orchestrate high-level steps OR handle low-level detail; never both in the same method.
-- **Command-Query Separation (CQS)** — a method either returns a value (query, no side effects) or changes state (command, returns void). Avoid both.
-- **No primitive obsession** — wrap related primitives in a named type (`record`, `struct`, `enum`) rather than passing loose `int`/`string` bundles.
-- **Explicit over implicit** — name things clearly; `private`/`internal` on every member; no magic numbers (use a descriptive `const`).
-- **Strangler fig for large changes** — add the new path alongside the old, migrate call-sites incrementally, then delete the old path. Avoid big-bang rewrites in a single commit.
-
-### SOLID Principles
-
-| Principle | Applied here |
-|---|---|
-| **S** — Single Responsibility | Each `*Route` parses args and calls a command. Each `*Command` executes pure domain logic. No class does both. |
-| **O** — Open / Closed | Add a new command by adding a new `*Route` + `*Command` pair. Never add branches to `CommandRouter`. |
-| **L** — Liskov Substitution | `CommandRoute` subclasses are fully substitutable — `TryRoute` contract must hold. |
-| **I** — Interface Segregation | Keep interfaces narrow. `CommandRoute` has one method. Don't grow it. |
-| **D** — Dependency Inversion | Routes depend on `WorkItemStore` (static methods today; keep new logic behind interfaces when adding complexity). |
-
-### Patterns in this codebase
-
-The `CommandRoute` / `CommandRouter` shape is the **Strategy pattern** — every route is a strategy. When adding functionality:
-
-- **Strategy** — new command = new `CommandRoute` subclass. Zero changes to `CommandRouter`.
-- **Template Method** — if routes share argument-parsing boilerplate, extract a base method, not duplicated code.
-- **Chain of Responsibility** — `CommandRouter.Route()` already implements this. Don't bypass it.
-
-When recommending a refactor, name the target pattern explicitly so it is searchable.
-
-### C# / .NET conventions
-
-- **Target framework:** `net10.0`
-- **Nullable:** enabled — no `#nullable disable` suppressions.
-- **File-scoped namespaces:** `namespace Markban.Core;` (no braces) — enforced as `:warning`.
-- **Records for immutable data:** `WorkItem`, `WorkItemSummary` are records — keep them that way.
-- **Collection expressions (C# 12):** prefer `[ ]` over `new List<T> { }`.
-- **`using` declarations:** prefer `using T x = ...;` (declaration form) over `using (T x = ...)`.
-- **`var`:** use when the type is apparent from the right-hand side (`var x = new Foo()`); be explicit for built-in types (`int`, `bool`, `string`).
-- **`async void`:** only for event handlers. All other async methods return `Task` or `Task<T>`.
-- **One type per file:** file name must match the primary type name.
-- **Allman braces:** opening brace on its own line — enforced by `.editorconfig`.
-- **Always braces:** every `if`/`else`/`for`/`while` body has braces, even single-liners — enforced as `:warning`.
-- **Explicit access modifiers:** `private`/`public`/`internal` on every declaration — enforced as `:warning`.
-- **Naming:** `_camelCase` private fields; `PascalCase` constants and static readonlys; `IPascalCase` interfaces.
-- **`System.*` usings first**, then alphabetical, no blank lines between groups.
-- **`dotnet format`:** run before every commit.
-
-```powershell
-# Format everything
-dotnet format
-
-# Check only (no writes — useful before committing)
-dotnet format --verify-no-changes
-```
-
-### CLI design conventions
-
-These apply to all new commands (and are the target state after item 1 lands):
-
-- One subcommand per concept: `markban block`, not `markban --block`.
-- Flags modify behaviour: `markban block <id> --remove`, not a separate `markban unblock`.
-- `--list` is a modifier on the subcommand: `markban block --list`.
-- `--dry-run` on every command that mutates state.
-- Positional args for required inputs; flags for optional modifiers.
-- `markban health` groups diagnostic checks: `markban health check-links`, `markban health check-order`.
+Key reminders:
+- Methods ≤ ~20 lines; cyclomatic complexity ≤ 7.
+- One `*Route` + `*Command` pair per command. Never add branches to `CommandRouter`.
+- Run `dotnet format` before every commit.
 
 ---
 
 ## Testing Standards
 
-Framework: **xUnit + AwesomeAssertions** (`net10.0`).
+See [testing-standards.instructions.md](../instructions/testing-standards.instructions.md) for full details.
 
-### Rules
-
-1. **Arrange / Act / Assert comments — always.** Every test method has `// Arrange`, `// Act`, `// Assert` markers on their own lines. If there is trivially no arrange, use `// Arrange — <reason>` on one line and combine Act + Assert.
-
-2. **Use AwesomeAssertions — never `Assert.*`.** Add `using AwesomeAssertions;`. Use `.Should()` chains everywhere.
-
-| xUnit | AwesomeAssertions |
-|---|---|
-| `Assert.Equal(expected, actual)` | `actual.Should().Be(expected)` |
-| `Assert.True(x)` | `x.Should().BeTrue()` |
-| `Assert.Null(x)` | `x.Should().BeNull()` |
-| `Assert.Empty(col)` | `col.Should().BeEmpty()` |
-| `Assert.Single(col)` | `col.Should().ContainSingle()` |
-
-Add a `because:` string to assertions where the failure message would not be self-evident.
-
-3. **Integration tests** live in `Markban.IntegrationTests/` and run the real CLI binary end-to-end via `CliRunner`. Follow the existing fixture pattern (`ToolBuildFixture`, `TestWorkspace`).
-
-### Running tests
-
-```powershell
-dotnet test                                              # all test projects
-dotnet test Markban.UnitTests/                          # unit tests only
-dotnet test Markban.IntegrationTests/                  # integration tests only
-```
+Key reminders:
+- Always `// Arrange` / `// Act` / `// Assert` markers.
+- AwesomeAssertions `.Should()` — never `Assert.*`.
+- Run `dotnet test` — all tests must pass before moving an item to Testing.
 
 ---
 
@@ -290,18 +210,24 @@ winget uninstall OliverOrchard.markban
 
 ## Release process
 
-The GitHub Actions workflow (`.github/workflows/`) triggers on version tags (`v*`). It:
-1. Builds self-contained native binaries for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `win-x64`.
-2. Packs the NuGet tool package.
-3. Creates a GitHub Release with all binaries attached.
-4. Updates the Homebrew tap formula with new `version` and `sha256` values.
+> **This is the ONLY way Homebrew users get updates.** The GitHub Actions workflow triggers exclusively on version tag pushes. A plain `git push` of code changes does NOT update the Homebrew tap — users will not see the new version until a tag is pushed.
 
-Tag format: `vMAJOR.MINOR.PATCH` — update `<Version>` in `Markban.Cli.csproj` before tagging.
+The GitHub Actions workflow (`.github/workflows/release.yml`) triggers on version tags (`v*`). It:
+1. Builds self-contained native binaries for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`.
+2. Creates a GitHub Release with all tarballs attached.
+3. Updates the Homebrew tap formula (`OliverOrchard/homebrew-markban`) with new `version` and `sha256` values — this is what makes `brew upgrade markban` work.
+
+### Steps to cut a release
+
+1. **Before committing** (in workflow step 10): bump `<Version>` in `Markban.Cli/Markban.Cli.csproj` to the new `MAJOR.MINOR.PATCH` so the version change is included in the feature commit — no separate chore commit between the feature and the tag.
+2. Push the tag — **this is what triggers everything**:
 
 ```powershell
-git tag v0.2.0
-git push origin v0.2.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
+
+Tag format: `vMAJOR.MINOR.PATCH` — must match the `<Version>` in the csproj.
 
 ---
 
@@ -314,7 +240,7 @@ git push origin v0.2.0
 - C# coding conventions: https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions
 - .NET API reference: https://learn.microsoft.com/en-us/dotnet/api/
 
-Use `web/fetchWebpage` to look up specific API contracts or latest guidance during implementation.
+Use #tool:web/fetchWebpage to look up specific API contracts or latest guidance during implementation.
 
 ---
 
