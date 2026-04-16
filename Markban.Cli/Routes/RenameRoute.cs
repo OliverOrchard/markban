@@ -1,23 +1,23 @@
-public class MoveRoute : CommandRoute
+public class RenameRoute : CommandRoute
 {
-    public override string? SubCommand => "move";
+    public override string? SubCommand => "rename";
 
     public override HelpEntry Help => new HelpEntry(
-        "move <id|slug> <lane> [--override-wip]",
-        "Move an item between lanes (Ideas/Rejected strip number prefix)",
-        "  <id|slug>          required - item to move\n" +
-        "  <lane>             required - target lane name\n" +
-        "  --override-wip     bypass the WIP limit for the target lane");
+        "rename <id|slug> \"New Title\" [--dry-run]",
+        "Rename item -- updates H1, filename, and cross-references",
+        "  <id|slug>          required - item to rename\n" +
+        "  \"New Title\"        required - new title\n" +
+        "  --dry-run          preview without executing");
 
     private static readonly HashSet<string> KnownFlags =
-        new(StringComparer.OrdinalIgnoreCase) { "--override-wip" };
+        new(StringComparer.OrdinalIgnoreCase) { "--dry-run" };
 
     private static readonly HashSet<string> ValueFlags =
         new(StringComparer.OrdinalIgnoreCase);
 
     public override bool TryRoute(string[] args, string rootPath)
     {
-        if (args.Length == 0 || args[0] != "move")
+        if (args.Length == 0 || args[0] != "rename")
         {
             return false;
         }
@@ -36,8 +36,10 @@ public class MoveRoute : CommandRoute
             return true;
         }
 
-        bool overrideWip = args.Contains("--override-wip");
-        MoveCommand.Execute(rootPath, args[1], args[2], overrideWip);
+        var identifier = args[1];
+        var newTitle = args[2];
+        bool dryRun = args.Contains("--dry-run");
+        RenameCommand.Execute(rootPath, identifier, newTitle, dryRun);
         return true;
     }
 }

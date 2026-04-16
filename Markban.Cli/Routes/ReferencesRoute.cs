@@ -11,7 +11,9 @@ public class ReferencesRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "references")
+        {
             return false;
+        }
 
         if (args.Length < 2)
         {

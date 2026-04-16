@@ -13,7 +13,9 @@ public class WebRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "web")
+        {
             return false;
+        }
 
         int port = 5000;
         bool noOpen = false;

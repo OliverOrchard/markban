@@ -35,11 +35,11 @@ The web UI should visually indicate lanes at or near their limit (e.g. column he
 
 ## Acceptance Criteria
 
-- [ ] `wip` property on a lane config enforces a max item count for that lane
-- [ ] `--move`, `--create --lane`, and `--start` all check the limit before moving
-- [ ] Clear error message shows current count, limit, and how to override
-- [ ] `--override-wip` flag bypasses the check on any command
-- [ ] No `wip` set = no restriction, fully backward compatible
-- [ ] Web UI column header reflects limit status visually
-- [ ] `markban init` writes lanes without `wip` (users opt in explicitly)
-- [ ] Unit tests for at-limit and over-limit scenarios
+- [x] `wip` property on a lane config enforces a max item count for that lane
+- [x] `--move`, `--create --lane`, and `--start` all check the limit before moving
+- [x] Clear error message shows current count, limit, and how to override
+- [x] `--override-wip` flag bypasses the check on any command
+- [x] No `wip` set = no restriction, fully backward compatible
+- [x] Web UI column header reflects limit status visually (split out to [web-ui-wip-limit-indicator])
+- [x] `markban init` writes lanes without `wip` (users opt in explicitly)
+- [x] Unit tests for at-limit and over-limit scenarios

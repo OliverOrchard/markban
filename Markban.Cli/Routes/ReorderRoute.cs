@@ -13,7 +13,9 @@ public class ReorderRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "reorder")
+        {
             return false;
+        }
 
         if (args.Length < 3)
         {

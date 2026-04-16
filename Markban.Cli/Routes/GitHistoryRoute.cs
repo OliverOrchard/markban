@@ -9,7 +9,9 @@ public class GitHistoryRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "git-history")
+        {
             return false;
+        }
 
         if (args.Length < 2)
         {

@@ -176,7 +176,7 @@ public class InitCommandTests
     }
 
     [Fact]
-    public void Execute_DefaultPath_DoesNotWriteMarkbanJson()
+    public void Execute_DefaultPath_WritesMarkbanJsonWithDefaults()
     {
         // Arrange
         var dir = CreateTempDir();
@@ -187,8 +187,13 @@ public class InitCommandTests
             InitCommand.Execute(dir, boardPath: null, name: null, dryRun: false);
 
             // Assert
-            File.Exists(Path.Combine(dir, "markban.json")).Should().BeFalse(
-                because: "markban.json is only written when --path or --name is supplied");
+            var configPath = Path.Combine(dir, "markban.json");
+            File.Exists(configPath).Should().BeTrue(
+                because: "markban init should always write markban.json with explicit defaults");
+            var content = File.ReadAllText(configPath);
+            content.Should().Contain("\"rootPath\": \"./work-items\"");
+            content.Should().Contain("\"heading\"");
+            content.Should().Contain("\"slugs\"");
         }
         finally
         {

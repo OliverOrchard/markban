@@ -39,3 +39,8 @@ Depends on [frontmatter-layer] (frontmatter layer).
 - [ ] `markban overview` shows blocked item count per lane
 - [ ] Web UI card shows visual blocked indicator with reason on hover
 - [ ] `markban list --json` includes `blocked` field in output
+- [ ] Feature is gated by `blocked: { "enabled": true }` in `markban.json` (default: `true` when absent)
+- [ ] When `enabled: false`, `markban block` commands show a clear error: "The 'blocked' feature is disabled in your config"
+- [ ] When `enabled: false`, no `blocked` frontmatter field is written by any command (including `create`)
+- [ ] When `enabled: false`, `markban help block` is absent from command listing
+- [ ] `markban init` writes `blocked: { "enabled": true }` as an explicit default

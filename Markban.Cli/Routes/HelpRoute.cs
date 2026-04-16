@@ -7,9 +7,23 @@ public class HelpRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length > 0 && args[0] != "help" && !args.Contains("--help") && !args.Contains("-h"))
+        {
             return false;
+        }
 
-        HelpCommand.Execute(CommandRouter.Routes.Select(r => r.Help).ToList());
+        if (args.Length >= 2 && args[0] == "help")
+        {
+            var subCmd = args[1];
+            var match = CommandRouter.Routes.FirstOrDefault(r =>
+                r.SubCommand?.Equals(subCmd, StringComparison.OrdinalIgnoreCase) == true);
+            if (match != null)
+            {
+                match.PrintHelp(rootPath);
+                return true;
+            }
+        }
+
+        HelpCommand.Execute(CommandRouter.Routes.Select(r => r.GetHelp(rootPath)).ToList());
         return true;
     }
 }

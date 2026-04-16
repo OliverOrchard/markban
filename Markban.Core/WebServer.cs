@@ -36,11 +36,20 @@ public static class WebServer
             return Results.Ok(items);
         });
 
+        app.MapGet("/api/lanes", (HttpContext context) =>
+        {
+            context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            var laneNames = WorkItemStore.LoadConfig(rootPath).Select(l => l.Name).ToArray();
+            return Results.Ok(laneNames);
+        });
+
         app.MapPost("/api/move", async (HttpContext context) =>
         {
             var body = await context.Request.ReadFromJsonAsync<MoveRequest>();
             if (body is null || string.IsNullOrWhiteSpace(body.Identifier) || string.IsNullOrWhiteSpace(body.Target))
+            {
                 return Results.BadRequest(new { error = "Missing 'identifier' or 'target'." });
+            }
 
             var stdout = new StringWriter();
             var originalOut = Console.Out;
@@ -56,7 +65,9 @@ public static class WebServer
 
             var message = stdout.ToString().TrimEnd();
             if (message.StartsWith("Error:"))
+            {
                 return Results.BadRequest(new { error = message });
+            }
 
             return Results.Ok(new { message });
         });
@@ -80,11 +91,17 @@ public static class WebServer
         try
         {
             if (OperatingSystem.IsWindows())
+            {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            }
             else if (OperatingSystem.IsMacOS())
+            {
                 System.Diagnostics.Process.Start("open", url);
+            }
             else
+            {
                 System.Diagnostics.Process.Start("xdg-open", url);
+            }
         }
         catch { /* best-effort */ }
     }

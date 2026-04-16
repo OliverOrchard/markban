@@ -6,10 +6,10 @@ namespace Markban.UnitTests;
 public class CommandRouterTests
 {
     [Fact]
-    public void Routes_ContainsAllSeventeenRoutes_AfterInit()
+    public void Routes_ContainsAllNineteenRoutes_AfterInit()
     {
-        CommandRouter.Routes.Should().HaveCount(17,
-            because: "there are seventeen CLI commands routed through the strategy pattern");
+        CommandRouter.Routes.Should().HaveCount(19,
+            because: "there are nineteen CLI commands routed through the strategy pattern");
     }
 
     [Fact]
@@ -26,9 +26,11 @@ public class CommandRouterTests
             typeof(ShowRoute),
             typeof(SearchRoute),
             typeof(MoveRoute),
+            typeof(ProgressRoute),
             typeof(NextIdRoute),
             typeof(ReorderRoute),
             typeof(CreateRoute),
+            typeof(RenameRoute),
             typeof(OverviewRoute),
             typeof(SanitizeRoute),
             typeof(HealthRoute),
@@ -43,6 +45,19 @@ public class CommandRouterTests
         // Assert
         actualTypes.Should().Equal(expectedTypes,
             because: "route evaluation order matters — help should be checked first");
+    }
+
+    [Fact]
+    public void AllRoutes_HaveNonEmptyHelp()
+    {
+        // Arrange / Act / Assert
+        foreach (var route in CommandRouter.Routes)
+        {
+            route.Help.Usage.Should().NotBeNullOrWhiteSpace(
+                because: $"{route.GetType().Name} must declare a Usage string");
+            route.Help.Description.Should().NotBeNullOrWhiteSpace(
+                because: $"{route.GetType().Name} must declare a Description");
+        }
     }
 
     [Fact]

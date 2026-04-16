@@ -250,7 +250,10 @@ public class CheckLinksCommandTests
     {
         var root = Path.Combine(Path.GetTempPath(), "wi-checklinks-" + Guid.NewGuid().ToString("N")[..8]);
         foreach (var folder in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
             Directory.CreateDirectory(Path.Combine(root, folder));
+        }
+
         return root;
     }
 }

@@ -10,9 +10,13 @@ public static class HelpCommand
         {
             var usageLine = "  " + entry.Usage;
             if (usageLine.Length >= UsageColumnWidth)
+            {
                 Console.WriteLine($"{usageLine}  {entry.Description}");
+            }
             else
+            {
                 Console.WriteLine($"{usageLine.PadRight(UsageColumnWidth)}{entry.Description}");
+            }
         }
         Console.WriteLine();
         Console.WriteLine("Global flags:");

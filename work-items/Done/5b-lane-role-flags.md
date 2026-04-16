@@ -22,14 +22,14 @@ Wire the `type` and `pickable` lane config properties into the commands that cur
 
 ## Acceptance Criteria
 
-- [ ] `--commit` resolves terminal lane via `type: "done"`, not hardcoded `"Done"`
-- [ ] `--create` default lane resolved via `type: "ready"`, not hardcoded `"Todo"`
-- [ ] `--next` reads from `type: "ready"` lane, not hardcoded `"Todo"`
-- [ ] `--progress <id>` advances item one lane forward in config array order
-- [ ] `--progress` skips lanes with `pickable: false`
-- [ ] `--progress` stops and informs user when item is already in the `done` lane
-- [ ] `pickable: false` lanes excluded from `--next` source and `--create` default
-- [ ] Config validation errors clearly when `type: "done"` is missing or duplicated
-- [ ] Config validation errors clearly when `type: "ready"` is missing on `--next` or `--create`
-- [ ] All existing tests still pass with default config (which sets these types on standard lanes)
-- [ ] New unit tests covering custom lane type assignments
+- [x] `--commit` resolves terminal lane via `type: "done"`, not hardcoded `"Done"`
+- [x] `--create` default lane resolved via `type: "ready"`, not hardcoded `"Todo"`
+- [x] `--next` reads from `type: "ready"` lane, not hardcoded `"Todo"`
+- [ ] `--progress <id>` advances item one lane forward in config array order *(deferred to [progress-command])*
+- [ ] `--progress` skips lanes with `pickable: false` *(deferred to [progress-command])*
+- [ ] `--progress` stops and informs user when item is already in the `done` lane *(deferred to [progress-command])*
+- [x] `pickable: false` lanes excluded from `--next` source and `--create` default
+- [x] Config validation errors clearly when `type: "done"` is missing or duplicated
+- [x] Config validation errors clearly when `type: "ready"` is missing on `--next` or `--create`
+- [x] All existing tests still pass with default config (which sets these types on standard lanes)
+- [x] New unit tests covering custom lane type assignments

@@ -10,6 +10,18 @@ public class CommitRoute : CommandRoute
         "  --message \"msg\"    commit message\n" +
         "  --dry-run          preview without executing");
 
+    public override HelpEntry GetHelp(string rootPath)
+    {
+        var tags = CommitCommand.GetValidTags(rootPath);
+        return new HelpEntry(
+            "commit <id|slug> --tag <tag> --message \"msg\" [--dry-run]",
+            "Move item to Done, then git add / commit / push",
+            "  <id|slug>          required - item to commit\n" +
+            $"  --tag <tag>        valid: {string.Join(", ", tags)}\n" +
+            "  --message \"msg\"    commit message\n" +
+            "  --dry-run          preview without executing");
+    }
+
     private static readonly HashSet<string> KnownFlags = new(StringComparer.OrdinalIgnoreCase)
         { "--tag", "--message", "--dry-run" };
 
@@ -19,7 +31,9 @@ public class CommitRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "commit")
+        {
             return false;
+        }
 
         if (args.Length < 2)
         {
@@ -41,14 +55,20 @@ public class CommitRoute : CommandRoute
         if (args.Contains("--tag"))
         {
             var ti = Array.IndexOf(args, "--tag");
-            if (ti + 1 < args.Length) tag = args[ti + 1];
+            if (ti + 1 < args.Length)
+            {
+                tag = args[ti + 1];
+            }
         }
 
         string? message = null;
         if (args.Contains("--message"))
         {
             var mi = Array.IndexOf(args, "--message");
-            if (mi + 1 < args.Length) message = args[mi + 1];
+            if (mi + 1 < args.Length)
+            {
+                message = args[mi + 1];
+            }
         }
 
         if (string.IsNullOrWhiteSpace(tag) || string.IsNullOrWhiteSpace(message))

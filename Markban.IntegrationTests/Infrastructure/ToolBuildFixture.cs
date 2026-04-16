@@ -31,11 +31,15 @@ public class ToolBuildFixture : IAsyncLifetime
         await proc.WaitForExitAsync();
 
         if (proc.ExitCode != 0)
+        {
             throw new InvalidOperationException($"Failed to build WorkItemViewer:\n{stderr}");
+        }
 
         DllPath = Path.Combine(projectDir, "bin", "Debug", "net10.0", "markban.dll");
         if (!File.Exists(DllPath))
+        {
             throw new FileNotFoundException($"Built DLL not found at: {DllPath}");
+        }
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
@@ -47,7 +51,10 @@ public class ToolBuildFixture : IAsyncLifetime
         {
             var candidate = Path.Combine(dir.FullName, "Markban.Cli");
             if (Directory.Exists(candidate))
+            {
                 return candidate;
+            }
+
             dir = dir.Parent;
         }
         throw new DirectoryNotFoundException("Could not find Markban.Cli project directory.");

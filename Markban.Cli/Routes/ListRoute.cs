@@ -19,7 +19,9 @@ public class ListRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "list")
+        {
             return false;
+        }
 
         var unknownFlag = FindUnknownFlag(args, 1, KnownFlags, ValueFlags);
         if (unknownFlag != null)

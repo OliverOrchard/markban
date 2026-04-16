@@ -10,9 +10,11 @@ public static class CommandRouter
         new ShowRoute(),
         new SearchRoute(),
         new MoveRoute(),
+        new ProgressRoute(),
         new NextIdRoute(),
         new ReorderRoute(),
         new CreateRoute(),
+        new RenameRoute(),
         new OverviewRoute(),
         new SanitizeRoute(),
         new HealthRoute(),
@@ -36,7 +38,9 @@ public static class CommandRouter
         foreach (var route in Routes)
         {
             if (route.TryRoute(args, rootPath))
+            {
                 return true;
+            }
         }
         return false;
     }

@@ -18,7 +18,15 @@ bool needsRoot = effectiveArgs.Length > 0
 string rootPath;
 if (!needsRoot)
 {
-    rootPath = "";
+    if (explicitRoot != null)
+    {
+        rootPath = explicitRoot;
+    }
+    else
+    {
+        try { rootPath = WorkItemStore.FindRoot(); }
+        catch (DirectoryNotFoundException) { rootPath = ""; }
+    }
 }
 else
 {

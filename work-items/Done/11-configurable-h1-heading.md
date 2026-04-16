@@ -29,9 +29,9 @@ Default is `true` (current behaviour, fully backward compatible).
 
 ## Acceptance Criteria
 
-- [ ] `heading.enabled: false` in config suppresses H1 on `--create`
-- [ ] `--sanitize` skips H1 rewriting when disabled
-- [ ] `--rename` skips H1 update when disabled
-- [ ] All commands that extract a display title fall back to slug when no H1 is present
-- [ ] Default `heading.enabled: true` preserves all existing behaviour
-- [ ] `markban init` writes `heading.enabled: true` in the explicit defaults output (see [explicit-defaults-in-init])
+- [x] `heading.enabled: false` in config suppresses H1 on `--create`
+- [x] `--sanitize` skips H1 rewriting when disabled
+- [x] `--rename` skips H1 update when disabled
+- [x] All commands that extract a display title fall back to slug when no H1 is present
+- [x] Default `heading.enabled: true` preserves all existing behaviour
+- [x] `markban init` writes `heading.enabled: true` in the explicit defaults output (see [explicit-defaults-in-init])

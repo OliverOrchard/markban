@@ -14,7 +14,9 @@ public class HealthRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "health")
+        {
             return false;
+        }
 
         var subcommand = args.Length > 1 ? args[1] : null;
 
@@ -44,7 +46,9 @@ public class HealthRoute : CommandRoute
         var (broken, numericRefs) = CheckLinksCommand.Execute(rootPath, items, includeIdeas);
         CheckLinksCommand.PrintResults(broken, numericRefs);
         if (broken.Count > 0 || numericRefs.Count > 0)
+        {
             Environment.ExitCode = 1;
+        }
     }
 
     private static void RunCheckOrder(string rootPath, string[] args)
@@ -53,7 +57,9 @@ public class HealthRoute : CommandRoute
         var (hasIssues, messages) = CheckOrderCommand.Execute(rootPath, fix);
         CheckOrderCommand.PrintResults(hasIssues, messages);
         if (hasIssues)
+        {
             Environment.ExitCode = 1;
+        }
     }
 
     private static void RunAll(string rootPath)
@@ -64,14 +70,20 @@ public class HealthRoute : CommandRoute
         var (broken, numericRefs) = CheckLinksCommand.Execute(rootPath, items, false);
         CheckLinksCommand.PrintResults(broken, numericRefs);
         if (broken.Count > 0 || numericRefs.Count > 0)
+        {
             anyFailed = true;
+        }
 
         var (hasOrderIssues, orderMessages) = CheckOrderCommand.Execute(rootPath, false);
         CheckOrderCommand.PrintResults(hasOrderIssues, orderMessages);
         if (hasOrderIssues)
+        {
             anyFailed = true;
+        }
 
         if (anyFailed)
+        {
             Environment.ExitCode = 1;
+        }
     }
 }

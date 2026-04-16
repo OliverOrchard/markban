@@ -22,8 +22,8 @@ This also makes it trivial to add `--help <command>` for per-command detailed he
 
 ## Acceptance Criteria
 
-- [ ] All existing commands have a registered help entry with usage line and description
-- [ ] `--help` output is identical in content to the current hand-written output
-- [ ] Adding a new command without a help entry causes a test to fail (coverage check)
-- [ ] `HelpCommand.cs` contains no hardcoded usage strings
-- [ ] `--help <command>` parses but can fall back to full help for now (foundation laid)
+- [x] All existing commands have a registered help entry with usage line and description
+- [x] `--help` output is identical in content to the current hand-written output
+- [x] Adding a new command without a help entry causes a test to fail (coverage check)
+- [x] `HelpCommand.cs` contains no hardcoded usage strings
+- [x] `--help <command>` parses but can fall back to full help for now (foundation laid)

@@ -26,11 +26,12 @@ markban progress 5  (if already at Done)
 
 ## Acceptance Criteria
 
-- [ ] `markban progress <id|slug>` moves item to the next lane in config array order
-- [ ] Skips lanes with `pickable: false` when finding the next lane
-- [ ] Stops at `type: "done"` lane and prints informational message rather than erroring
-- [ ] Errors clearly if item identifier is not found
-- [ ] Works with both numeric ID and slug
-- [ ] `markban progress <id> --dry-run` shows planned move without executing
-- [ ] Depends on [lane-role-flags] (type/pickable wired into commands)
-- [ ] Integration test: progress through a full workflow from ready -> done
+- [x] `markban progress <id|slug>` moves item to the next lane in config array order
+- [x] Array order in `markban.json` determines the forward direction
+- [x] Skips lanes with `pickable: false` when finding the next lane
+- [x] Stops at `type: "done"` lane and prints informational message rather than erroring
+- [x] Errors clearly if item identifier is not found
+- [x] Works with both numeric ID and slug
+- [x] `markban progress <id> --dry-run` shows planned move without executing
+- [x] Depends on [lane-role-flags] (type/pickable wired into commands)
+- [x] Integration test: progress through a full workflow from ready -> done

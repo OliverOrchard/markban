@@ -9,7 +9,9 @@ public class ShowRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "show")
+        {
             return false;
+        }
 
         if (args.Length < 2)
         {

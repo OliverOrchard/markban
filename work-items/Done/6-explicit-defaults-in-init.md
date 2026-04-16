@@ -34,9 +34,9 @@ If `markban.json` already exists when `init` is run, init reads it and creates o
 
 ## Acceptance Criteria
 
-- [ ] `markban init` creates `markban.json` with all defaults written out explicitly
-- [ ] `markban init` with a pre-existing `markban.json` reads it and bootstraps directories accordingly
-- [ ] Custom lanes in a pre-existing config are respected -- correct directories are created
-- [ ] `--dry-run` shows both the config that would be written and the directories that would be created
-- [ ] Re-running init on an already-bootstrapped board is safe -- no overwrites
-- [ ] Depends on [init-command] (item 2) and [configurable-lanes] (item 4)
+- [x] `markban init` creates `markban.json` with all defaults written out explicitly
+- [x] `markban init` with a pre-existing `markban.json` reads it and bootstraps directories accordingly
+- [x] Custom lanes in a pre-existing config are respected -- correct directories are created
+- [x] `--dry-run` shows both the config that would be written and the directories that would be created
+- [x] Re-running init on an already-bootstrapped board is safe -- no overwrites
+- [x] Depends on [init-command] (item 2) and [configurable-lanes] (item 4)

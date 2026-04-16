@@ -18,7 +18,9 @@ public class InitRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "init")
+        {
             return false;
+        }
 
         var unknownFlag = FindUnknownFlag(args, 1, KnownFlags, ValueFlags);
         if (unknownFlag != null)
@@ -32,14 +34,20 @@ public class InitRoute : CommandRoute
         if (args.Contains("--path"))
         {
             var i = Array.IndexOf(args, "--path");
-            if (i + 1 < args.Length) boardPath = args[i + 1];
+            if (i + 1 < args.Length)
+            {
+                boardPath = args[i + 1];
+            }
         }
 
         string? name = null;
         if (args.Contains("--name"))
         {
             var i = Array.IndexOf(args, "--name");
-            if (i + 1 < args.Length) name = args[i + 1];
+            if (i + 1 < args.Length)
+            {
+                name = args[i + 1];
+            }
         }
 
         bool dryRun = args.Contains("--dry-run");

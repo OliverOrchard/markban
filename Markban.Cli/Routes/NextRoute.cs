@@ -9,7 +9,9 @@ public class NextRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "next")
+        {
             return false;
+        }
 
         ListCommand.ExecuteNext(rootPath);
         return true;

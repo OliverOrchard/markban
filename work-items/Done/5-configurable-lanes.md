@@ -37,16 +37,15 @@ When no `lanes` key is present, the hardcoded defaults apply unchanged -- fully 
 
 ## Acceptance Criteria
 
-- [ ] `lanes` array in `markban.json` drives which directories are scanned and in what order
-- [ ] `ordered: true` lanes use numbered filenames and support `--reorder`
-- [ ] `ordered: false` lanes use slug-only filenames, no numbering
-- [ ] `type: "done"` lane is the target for `--commit` -- no hardcoded `"Done"`
-- [ ] `type: "ready"` lane is the default for `--create` -- no hardcoded `"Todo"`
-- [ ] `type: "ready"` lane is the source for `--next` -- no hardcoded `"Todo"`
-- [ ] `--progress <id>` advances item one lane forward in config array order (stops at `done` lane)
-- [ ] Validation errors if zero or multiple lanes have `type: "done"`
-- [ ] `--move` validates target against configured lanes, not hardcoded list
-- [ ] `--create --lane` validates against configured lanes
-- [ ] Missing `lanes` key falls back to current hardcoded defaults -- no breaking change
-- [ ] Web UI columns reflect configured lanes
-- [ ] See also [explicit-defaults-in-init] -- `markban init` writes the full lane config so users can see and edit it
+- [x] `lanes` array in `markban.json` drives which directories are scanned and in what order
+- [x] `ordered: true` lanes use numbered filenames and support `--reorder`
+- [x] `ordered: false` lanes use slug-only filenames, no numbering
+- [x] `type: "done"` lane is the target for `--commit` -- no hardcoded `"Done"`
+- [x] `type: "ready"` lane is the default for `--create` -- no hardcoded `"Todo"`
+- [x] `type: "ready"` lane is the source for `--next` -- no hardcoded `"Todo"`
+- [x] Validation errors if zero or multiple lanes have `type: "done"`
+- [x] `--move` validates target against configured lanes, not hardcoded list
+- [x] `--create --lane` validates against configured lanes
+- [x] Missing `lanes` key falls back to current hardcoded defaults -- no breaking change
+- [x] Web UI columns reflect configured lanes
+- [x] See also [explicit-defaults-in-init] -- `markban init` writes the full lane config so users can see and edit it

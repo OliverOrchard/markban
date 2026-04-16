@@ -22,9 +22,10 @@ The help text for `--commit` should reflect the configured tag list at runtime, 
 
 ## Acceptance Criteria
 
-- [ ] `commit.tags` in config replaces the default tag list
-- [ ] `--commit` validates the tag against the configured list
-- [ ] Error message on invalid tag lists the configured valid tags, not the hardcoded defaults
-- [ ] Help text shows configured tags at runtime
-- [ ] Default list preserved when `commit.tags` is absent
-- [ ] `markban init` writes `commit.tags` with the default list in explicit defaults (see [explicit-defaults-in-init])
+- [x] `commit.tags` in config replaces the default tag list
+- [x] `--commit` validates the tag against the configured list
+- [x] Error message on invalid tag lists the configured valid tags, not the hardcoded defaults
+- [x] Help text shows configured tags at runtime
+  - Fix: `Program.cs` was passing `rootPath = ""` for `help` commands even when `--root` was provided; `HelpRoute` was calling `PrintHelp()` (uses static `Help` property) instead of `PrintHelp(rootPath)` (uses `GetHelp(rootPath)`)
+- [x] Default list preserved when `commit.tags` is absent
+- [x] `markban init` writes `commit.tags` with the default list in explicit defaults (see [explicit-defaults-in-init])

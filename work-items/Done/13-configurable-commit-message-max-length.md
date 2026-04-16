@@ -20,8 +20,8 @@ Default remains 72 -- no change to existing behaviour. `markban init` writes thi
 
 ## Acceptance Criteria
 
-- [ ] `commit.maxMessageLength` in config overrides the 72-char limit
-- [ ] Default of 72 preserves current behaviour
-- [ ] Error message on violation shows both the configured limit and the actual length
-- [ ] `markban init` writes `commit.maxMessageLength: 72` in explicit defaults (see [explicit-defaults-in-init])
-- [ ] `--dry-run` validation uses the configured limit
+- [x] `commit.maxMessageLength` in config overrides the 72-char limit
+- [x] Default of 72 preserves current behaviour
+- [x] Error message on violation shows both the configured limit and the actual length
+- [x] `markban init` writes `commit.maxMessageLength: 72` in explicit defaults (see [explicit-defaults-in-init])
+- [x] `--dry-run` validation uses the configured limit

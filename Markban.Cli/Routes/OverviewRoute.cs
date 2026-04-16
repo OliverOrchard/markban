@@ -9,7 +9,9 @@ public class OverviewRoute : CommandRoute
     public override bool TryRoute(string[] args, string rootPath)
     {
         if (args.Length == 0 || args[0] != "overview")
+        {
             return false;
+        }
 
         OverviewCommand.Execute(rootPath);
         return true;

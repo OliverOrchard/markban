@@ -2,17 +2,22 @@ public abstract class CommandRoute
 {
     public abstract bool TryRoute(string[] args, string rootPath);
     public abstract HelpEntry Help { get; }
+    public virtual HelpEntry GetHelp(string rootPath) => Help;
 
     public virtual string? SubCommand => null;
 
-    public void PrintHelp()
+    public void PrintHelp() => PrintEntry(Help);
+
+    public void PrintHelp(string rootPath) => PrintEntry(GetHelp(rootPath));
+
+    private static void PrintEntry(HelpEntry entry)
     {
-        Console.WriteLine($"Usage: markban {Help.Usage}");
-        Console.WriteLine($"  {Help.Description}");
-        if (Help.Detail != null)
+        Console.WriteLine($"Usage: markban {entry.Usage}");
+        Console.WriteLine($"  {entry.Description}");
+        if (entry.Detail != null)
         {
             Console.WriteLine();
-            Console.WriteLine(Help.Detail);
+            Console.WriteLine(entry.Detail);
         }
     }
 
@@ -21,10 +26,18 @@ public abstract class CommandRoute
     {
         for (int i = startIndex; i < args.Length; i++)
         {
-            if (!args[i].StartsWith("-")) continue;
+            if (!args[i].StartsWith("-"))
+            {
+                continue;
+            }
+
             if (known.Contains(args[i]))
             {
-                if (takesValue.Contains(args[i])) i++;
+                if (takesValue.Contains(args[i]))
+                {
+                    i++;
+                }
+
                 continue;
             }
             return args[i];

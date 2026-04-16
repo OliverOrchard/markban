@@ -1,5 +1,5 @@
-using Markban.IntegrationTests.Infrastructure;
 using AwesomeAssertions;
+using Markban.IntegrationTests.Infrastructure;
 using Xunit;
 
 namespace Markban.IntegrationTests;
@@ -61,7 +61,9 @@ public class ConfigAndMultipleBoardsTests : IDisposable
 
         var boardsDir = Path.Combine(projectDir, "boards");
         foreach (var sub in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
             Directory.CreateDirectory(Path.Combine(boardsDir, sub));
+        }
 
         File.WriteAllText(Path.Combine(boardsDir, "Todo", "1-relative-path.md"),
             "# 1 - Relative Path\n\n## Description\n\nFound via relative config");
@@ -86,7 +88,9 @@ public class ConfigAndMultipleBoardsTests : IDisposable
 
         var workItemsDir = Path.Combine(projectDir, "work-items");
         foreach (var sub in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
             Directory.CreateDirectory(Path.Combine(workItemsDir, sub));
+        }
 
         File.WriteAllText(Path.Combine(workItemsDir, "Todo", "1-fallback.md"),
             "# 1 - Fallback\n\n## Description\n\nFound via fallback");
@@ -112,7 +116,9 @@ public class ConfigAndMultipleBoardsTests : IDisposable
 
         var workItemsDir = Path.Combine(projectDir, "work-items");
         foreach (var sub in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
             Directory.CreateDirectory(Path.Combine(workItemsDir, sub));
+        }
 
         File.WriteAllText(Path.Combine(workItemsDir, "Todo", "1-no-config.md"),
             "# 1 - No Config\n\n## Description\n\nFound without any config");
@@ -242,13 +248,194 @@ public class ConfigAndMultipleBoardsTests : IDisposable
     }
 
     // -------------------------------------------------------------------------
+    // Commit tag validation uses configured list
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task CommitTag_InvalidTag_ErrorListsConfiguredTagsNotDefaults()
+    {
+        // Arrange: board with a custom commit.tags list that excludes 'style'
+        var parentDir = Path.Combine(Path.GetTempPath(), "mb-committag-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(parentDir);
+        _workspaces.Add(new _TempDirWorkspace(parentDir));
+
+        var boardRoot = Path.Combine(parentDir, "board");
+        foreach (var lane in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+            Directory.CreateDirectory(Path.Combine(boardRoot, lane));
+        File.WriteAllText(
+            Path.Combine(boardRoot, "Todo", "1-target-item.md"),
+            "# 1 - Target Item\n\n## Description\n\nItem to commit");
+        File.WriteAllText(
+            Path.Combine(parentDir, "markban.json"),
+            "{\"rootPath\": \"./board\", \"commit\": {\"tags\": [\"feat\", \"fix\", \"docs\", \"chore\", \"release\"]}}");
+
+        // Act: use 'style' which is in the default list but not the configured one
+        var result = await CliRunner.RunInDirAsync(
+            _build.DllPath, parentDir, "commit", "1", "--tag", "style", "--message", "Testing tag validation", "--dry-run");
+
+        // Assert
+        result.StdErr.Should().Contain("Invalid tag 'style'",
+            because: "'style' is not in the configured tag list");
+        result.StdErr.Should().Contain("release",
+            because: "the error message should list the configured tags, which include 'release'");
+        result.StdErr.Should().NotContain("refactor",
+            because: "the error should not list tags from the hardcoded defaults that are absent from config");
+    }
+
+    [Fact]
+    public async Task CommitTag_CustomTag_IsAccepted()
+    {
+        // Arrange: board with 'release' as a custom tag
+        var parentDir = Path.Combine(Path.GetTempPath(), "mb-customtag-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(parentDir);
+        _workspaces.Add(new _TempDirWorkspace(parentDir));
+
+        var boardRoot = Path.Combine(parentDir, "board");
+        foreach (var lane in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+            Directory.CreateDirectory(Path.Combine(boardRoot, lane));
+        File.WriteAllText(
+            Path.Combine(boardRoot, "Todo", "1-release-item.md"),
+            "# 1 - Release Item\n\n## Description\n\nTo be released");
+        File.WriteAllText(
+            Path.Combine(parentDir, "markban.json"),
+            "{\"rootPath\": \"./board\", \"commit\": {\"tags\": [\"feat\", \"fix\", \"docs\", \"chore\", \"release\"]}}");
+
+        // Act: 'release' is a custom tag in config; use --dry-run so no git calls are made
+        var result = await CliRunner.RunInDirAsync(
+            _build.DllPath, parentDir, "commit", "1", "--tag", "release", "--message", "Ship it", "--dry-run");
+
+        // Assert
+        result.StdErr.Should().NotContain("Invalid tag",
+            because: "'release' is explicitly listed in commit.tags and should be accepted");
+    }
+
+    // -------------------------------------------------------------------------
+    // H1 heading config
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Create_WithHeadingDisabled_ProducesFileWithNoH1()
+    {
+        // Arrange: board with heading.enabled: false
+        var parentDir = Path.Combine(Path.GetTempPath(), "mb-noheading-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(parentDir);
+        _workspaces.Add(new _TempDirWorkspace(parentDir));
+
+        var boardRoot = Path.Combine(parentDir, "board");
+        Directory.CreateDirectory(Path.Combine(boardRoot, "Todo"));
+        File.WriteAllText(
+            Path.Combine(parentDir, "markban.json"),
+            "{\"rootPath\": \"./board\", \"heading\": {\"enabled\": false}}");
+
+        // Act
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, parentDir, "create", "No Heading Item");
+
+        // Assert
+        result.StdErr.Should().BeEmpty();
+        var files = Directory.GetFiles(Path.Combine(boardRoot, "Todo"), "*.md");
+        files.Should().ContainSingle();
+        var content = File.ReadAllText(files[0]);
+        content.Should().NotContain("# 1 -",
+            because: "heading.enabled:false should mean no H1 is written to the file");
+    }
+
+    // -------------------------------------------------------------------------
+    // Slug casing config
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Create_WithInvalidSlugCasing_ReportsError()
+    {
+        // Arrange: board with an invalid slugs.casing value
+        var parentDir = Path.Combine(Path.GetTempPath(), "mb-badcasing-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(parentDir);
+        _workspaces.Add(new _TempDirWorkspace(parentDir));
+
+        var boardRoot = Path.Combine(parentDir, "board");
+        Directory.CreateDirectory(Path.Combine(boardRoot, "Todo"));
+        File.WriteAllText(
+            Path.Combine(parentDir, "markban.json"),
+            "{\"rootPath\": \"./board\", \"slugs\": {\"casing\": \"invalid\"}}");
+
+        // Act
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, parentDir, "create", "Some Item");
+
+        // Assert
+        result.StdErr.Should().Contain("Error",
+            because: "an invalid casing value should be reported as an error");
+        result.StdErr.Should().Contain("invalid",
+            because: "the error should echo back the bad casing value");
+        result.StdErr.Should().Contain("kebab",
+            because: "the error should list the valid casing options");
+    }
+
+    [Fact]
+    public async Task Create_WithSnakeCasing_ProducesUnderscoreSlug()
+    {
+        // Arrange: board with snake_case slugs
+        var parentDir = Path.Combine(Path.GetTempPath(), "mb-snake-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(parentDir);
+        _workspaces.Add(new _TempDirWorkspace(parentDir));
+
+        var boardRoot = Path.Combine(parentDir, "board");
+        Directory.CreateDirectory(Path.Combine(boardRoot, "Todo"));
+        File.WriteAllText(
+            Path.Combine(parentDir, "markban.json"),
+            "{\"rootPath\": \"./board\", \"slugs\": {\"casing\": \"snake\"}}");
+
+        // Act
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, parentDir, "create", "My Work Item Title");
+
+        // Assert
+        result.StdErr.Should().BeEmpty();
+        var files = Directory.GetFiles(Path.Combine(boardRoot, "Todo"), "*.md");
+        files.Should().ContainSingle();
+        Path.GetFileName(files[0]).Should().Be("1-my_work_item_title.md",
+            because: "snake casing should separate words with underscores");
+    }
+
+    // -------------------------------------------------------------------------
+    // Help text respects config
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task HelpCommit_ShowsConfiguredTagsNotHardcodedDefaults()
+    {
+        // Arrange: markban.json lives beside the work-items root so LoadSettings can find it
+        var parentDir = Path.Combine(Path.GetTempPath(), "mb-helptags-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(parentDir);
+        _workspaces.Add(new _TempDirWorkspace(parentDir));
+
+        var boardRoot = Path.Combine(parentDir, "work-items-root");
+        foreach (var lane in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
+            Directory.CreateDirectory(Path.Combine(boardRoot, lane));
+        }
+
+        File.WriteAllText(
+            Path.Combine(parentDir, "markban.json"),
+            "{\"rootPath\": \"./work-items-root\", \"commit\": {\"tags\": [\"feat\", \"fix\", \"docs\", \"chore\", \"release\"]}}");
+
+        // Act
+        var result = await CliRunner.RunInDirAsync(_build.DllPath, parentDir, "help", "commit");
+
+        // Assert
+        result.StdOut.Should().Contain("release",
+            because: "help commit should show the tags from commit.tags config, which includes 'release'");
+        result.StdOut.Should().NotContain("style",
+            because: "'style' is in the default tag list but not in the configured list");
+    }
+
+    // -------------------------------------------------------------------------
     // Cleanup
     // -------------------------------------------------------------------------
 
     public void Dispose()
     {
         foreach (var ws in _workspaces)
+        {
             ws.Dispose();
+        }
     }
 
     // Minimal IDisposable wrapper so arbitrary temp dirs can be tracked in _workspaces
@@ -257,7 +444,9 @@ public class ConfigAndMultipleBoardsTests : IDisposable
         public void Dispose()
         {
             if (Directory.Exists(dir))
+            {
                 Directory.Delete(dir, true);
+            }
         }
     }
 }

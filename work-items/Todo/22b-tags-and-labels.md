@@ -43,3 +43,8 @@ Depends on [frontmatter-layer] (frontmatter layer).
 - [ ] Tag matching is case-insensitive
 - [ ] Web UI shows tag badges on cards, clickable to filter board
 - [ ] `markban list --json` includes `tags` array in output
+- [ ] Feature is gated by `tags: { "enabled": true }` in `markban.json` (default: `true` when absent)
+- [ ] When `enabled: false`, `markban tag` commands show a clear error: "The 'tags' feature is disabled in your config"
+- [ ] When `enabled: false`, `create --tags` reports the same error; no `tags` frontmatter field is written by any command
+- [ ] When `enabled: false`, `--filter-tag` flag and `--tags` on `create` are absent from their respective help text
+- [ ] `markban init` writes `tags: { "enabled": true }` as an explicit default

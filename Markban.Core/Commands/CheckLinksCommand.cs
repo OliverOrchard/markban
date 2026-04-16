@@ -13,12 +13,10 @@ public static class CheckLinksCommand
             knownSlugs.Add(item.Slug);
         }
 
-        var foldersToScan = new List<string> { "Todo", "In Progress", "Testing", "Done" };
-        if (includeIdeas)
-        {
-            foldersToScan.Add("ideas");
-            foldersToScan.Add("Rejected");
-        }
+        var foldersToScan = WorkItemStore.LoadConfig(rootPath)
+            .Where(l => l.Pickable || includeIdeas)
+            .Select(l => l.Name)
+            .ToList();
 
         var broken = new List<BrokenLink>();
         var numericRefs = new List<NumericRef>();
@@ -33,20 +31,26 @@ public static class CheckLinksCommand
         foreach (var item in items)
         {
             if (!string.IsNullOrEmpty(item.Id))
+            {
                 idToSlug.TryAdd(item.Id, item.Slug);
+            }
         }
 
         foreach (var folder in foldersToScan)
         {
             var folderPath = Path.Combine(rootPath, folder);
             if (!Directory.Exists(folderPath))
+            {
                 continue;
+            }
 
             foreach (var file in Directory.GetFiles(folderPath, "*.md"))
             {
                 var fileName = Path.GetFileName(file);
                 if (fileName.StartsWith("."))
+                {
                     continue;
+                }
 
                 var lines = File.ReadAllLines(file);
                 for (int i = 0; i < lines.Length; i++)
@@ -91,7 +95,10 @@ public static class CheckLinksCommand
     internal static List<string> FindSuggestions(string brokenSlug, List<WorkItem> items, int maxResults = 3)
     {
         var brokenWords = brokenSlug.ToLower().Split('-', StringSplitOptions.RemoveEmptyEntries);
-        if (brokenWords.Length == 0) return [];
+        if (brokenWords.Length == 0)
+        {
+            return [];
+        }
 
         return items
             .Select(item =>
@@ -104,14 +111,19 @@ public static class CheckLinksCommand
                 int substringBonus = 0;
                 if (item.Slug.Contains(brokenSlug, StringComparison.OrdinalIgnoreCase) ||
                     brokenSlug.Contains(item.Slug, StringComparison.OrdinalIgnoreCase))
+                {
                     substringBonus = 100;
+                }
 
                 // Score: weighted word overlap + substring bonus
                 int score = (int)(wordRatio * 200) + substringBonus;
 
                 // Minimum threshold: at least 1 matching word for short slugs, 2 for longer ones
                 int minWords = brokenWords.Length <= 2 ? 1 : 2;
-                if (matchedWords < minWords && substringBonus == 0) score = 0;
+                if (matchedWords < minWords && substringBonus == 0)
+                {
+                    score = 0;
+                }
 
                 return new { item.Slug, item.Id, item.Status, Score = score };
             })

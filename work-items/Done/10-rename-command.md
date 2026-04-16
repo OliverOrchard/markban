@@ -21,9 +21,9 @@ markban rename board-switcher-in-web-ui "Web board switcher"
 
 ## Acceptance Criteria
 
-- [ ] `markban rename <id> "Title"` updates H1 and renames file atomically
-- [ ] `markban rename <slug> "Title"` works the same way
-- [ ] Cross-references to the old slug are updated across all files
-- [ ] `markban rename <id> "Title" --dry-run` shows planned rename and ref updates without executing
-- [ ] Errors clearly if the ID/slug does not exist
-- [ ] Respects `heading.enabled: false` config
+- [x] `markban rename <id> "Title"` updates H1 and renames file atomically
+- [x] `markban rename <slug> "Title"` works the same way
+- [x] Cross-references to the old slug are updated across all files
+- [x] `markban rename <id> "Title" --dry-run` shows planned rename and ref updates without executing
+- [x] Errors clearly if the ID/slug does not exist
+- [x] Respects `heading.enabled: false` config

@@ -1,5 +1,5 @@
-using Markban.IntegrationTests.Infrastructure;
 using AwesomeAssertions;
+using Markban.IntegrationTests.Infrastructure;
 using Xunit;
 
 namespace Markban.IntegrationTests;
@@ -36,7 +36,7 @@ public class InitTests : IDisposable
     }
 
     [Fact]
-    public async Task Init_DoesNotWriteConfig_WhenDefaultPath()
+    public async Task Init_WritesConfig_WithDefaultPath()
     {
         // Arrange — empty directory, no markban.json
 
@@ -45,8 +45,13 @@ public class InitTests : IDisposable
 
         // Assert
         result.StdErr.Should().BeEmpty();
-        File.Exists(Path.Combine(_emptyDir, "markban.json")).Should().BeFalse(
-            because: "markban.json is only written when --path or --name is supplied");
+        var configPath = Path.Combine(_emptyDir, "markban.json");
+        File.Exists(configPath).Should().BeTrue(
+            because: "markban init should always write markban.json with explicit defaults");
+        var content = File.ReadAllText(configPath);
+        content.Should().Contain("\"rootPath\": \"./work-items\"");
+        content.Should().Contain("\"heading\"");
+        content.Should().Contain("\"slugs\"");
     }
 
     [Fact]
@@ -138,6 +143,8 @@ public class InitTests : IDisposable
     public void Dispose()
     {
         if (Directory.Exists(_emptyDir))
+        {
             Directory.Delete(_emptyDir, true);
+        }
     }
 }

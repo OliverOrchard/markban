@@ -17,7 +17,9 @@ app.MapPost("/api/move", async (HttpContext context) =>
 {
     var body = await context.Request.ReadFromJsonAsync<MoveRequest>();
     if (body is null || string.IsNullOrWhiteSpace(body.Identifier) || string.IsNullOrWhiteSpace(body.Target))
+    {
         return Results.BadRequest(new { error = "Missing 'identifier' or 'target'." });
+    }
 
     var stdout = new StringWriter();
     var originalOut = Console.Out;
@@ -33,11 +35,13 @@ app.MapPost("/api/move", async (HttpContext context) =>
 
     var message = stdout.ToString().TrimEnd();
     if (message.StartsWith("Error:"))
+    {
         return Results.BadRequest(new { error = message });
+    }
 
     return Results.Ok(new { message });
 });
 
 app.Run();
 
-record MoveRequest(string Identifier, string Target);
+internal record MoveRequest(string Identifier, string Target);

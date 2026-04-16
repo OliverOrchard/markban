@@ -5,16 +5,25 @@ public static class ReorderCommand
 {
     public static void Execute(string rootPath, string folder, string orderArg, bool noSubItems, bool dryRun, int? startNumber = null)
     {
-        var validFolders = new[] { "Todo", "In Progress", "Testing", "Done" };
-        var normalizedFolder = validFolders.FirstOrDefault(f =>
-            f.Equals(folder, StringComparison.OrdinalIgnoreCase) ||
-            f.Replace(" ", "").Equals(folder.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
+        var lanes = WorkItemStore.LoadConfig(rootPath);
+        var targetLane = lanes.FirstOrDefault(l =>
+            l.Name.Equals(folder, StringComparison.OrdinalIgnoreCase) ||
+            l.Name.Replace(" ", "").Equals(folder.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
 
-        if (normalizedFolder == null)
+        if (targetLane == null)
         {
-            Console.WriteLine($"Error: Folder '{folder}' is invalid. Valid: Todo, In Progress, Testing, Done.");
+            var validOrdered = string.Join(", ", lanes.Where(l => l.Ordered).Select(l => l.Name));
+            Console.WriteLine($"Error: Folder '{folder}' is invalid. Valid ordered lanes: {validOrdered}");
             return;
         }
+
+        if (!targetLane.Ordered)
+        {
+            Console.WriteLine($"Error: Lane '{targetLane.Name}' is not an ordered lane and cannot be reordered.");
+            return;
+        }
+
+        var normalizedFolder = targetLane.Name;
 
         var allItems = WorkItemStore.LoadAll(rootPath);
 

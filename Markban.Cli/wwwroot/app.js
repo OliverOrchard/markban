@@ -1,7 +1,33 @@
 let allWorkItems = [];
 let currentDetailItem = null;
-const lanes = ['Todo', 'In Progress', 'Testing', 'Done', 'Ideas', 'Rejected'];
+let lanes = [];
 let hiddenLanes = new Set();
+
+async function initLanes() {
+    try {
+        const res = await fetch('/api/lanes');
+        if (res.ok) lanes = await res.json();
+    } catch { /* fall back to empty; board will show items unsorted */ }
+}
+
+function buildBoard() {
+    const kanban = document.getElementById('kanban');
+    kanban.innerHTML = '';
+    const moveSelect = document.getElementById('move-target');
+    moveSelect.innerHTML = '<option value="">Move to\u2026</option>';
+    lanes.forEach(lane => {
+        const colId = `col-${lane.replace(/ /g, '-')}`;
+        const col = document.createElement('div');
+        col.className = 'column';
+        col.setAttribute('data-lane', lane);
+        col.innerHTML = `<h2>${lane} <span class="col-count"></span></h2><div class="cards" id="${colId}"></div>`;
+        kanban.appendChild(col);
+        const opt = document.createElement('option');
+        opt.value = lane;
+        opt.textContent = lane;
+        moveSelect.appendChild(opt);
+    });
+}
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeDetail();
@@ -295,4 +321,4 @@ async function moveItemById(identifier, target) {
     }
 }
 
-loadItems();
+initLanes().then(() => { buildBoard(); loadItems(); });

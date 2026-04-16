@@ -20,14 +20,19 @@ public static class ListCommand
             if (fi >= 0 && fi + 1 < args.Length)
             {
                 var folderArg = args[fi + 1];
-                var validFolders = new[] { "Todo", "In Progress", "Testing", "Done", "Ideas", "Rejected" };
-                var normalized = validFolders.FirstOrDefault(f =>
-                    f.Equals(folderArg, StringComparison.OrdinalIgnoreCase) ||
-                    f.Replace(" ", "").Equals(folderArg.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
-                if (normalized != null)
-                    items = items.Where(i => i.Status == normalized).ToList();
+                var lanes = WorkItemStore.LoadConfig(rootPath);
+                var matchedLane = lanes.FirstOrDefault(l =>
+                    l.Name.Equals(folderArg, StringComparison.OrdinalIgnoreCase) ||
+                    l.Name.Replace(" ", "").Equals(folderArg.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
+                if (matchedLane != null)
+                {
+                    items = items.Where(i => i.Status == matchedLane.Name).ToList();
+                }
                 else
-                    Console.Error.WriteLine($"Warning: unknown folder '{folderArg}', showing all lanes (valid: Todo, InProgress, Testing, Done, Ideas, Rejected).");
+                {
+                    var valid = string.Join(", ", lanes.Select(l => l.Name));
+                    Console.Error.WriteLine($"Warning: unknown folder '{folderArg}', showing all lanes (valid: {valid}).");
+                }
             }
         }
 
@@ -64,8 +69,16 @@ public static class ListCommand
 
     public static void ExecuteNext(string rootPath)
     {
+        var lanes = WorkItemStore.LoadConfig(rootPath);
+        var readyLane = lanes.FirstOrDefault(l => l.Type == "ready");
+        if (readyLane == null)
+        {
+            Console.Error.WriteLine("Error: No lane with type 'ready' configured. Add \"type\": \"ready\" to a lane in markban.json.");
+            return;
+        }
+
         var items = WorkItemStore.LoadAll(rootPath);
-        var next = items.Where(i => i.Status == "Todo")
+        var next = items.Where(i => i.Status == readyLane.Name)
             .OrderBy(i => { var m = Regex.Match(i.Id, @"^(\d+)"); return m.Success ? int.Parse(m.Groups[1].Value) : int.MaxValue; })
             .ThenBy(i => { var m = Regex.Match(i.Id, @"^\d+(.*)$"); return m.Success ? m.Groups[1].Value : i.Id; })
             .FirstOrDefault();
@@ -89,15 +102,28 @@ public static class ListCommand
         var contentNormalized = item.Content.ToLower();
         var words = term.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w.ToLower()).ToArray();
 
-        if (words.Length == 0) return 0;
+        if (words.Length == 0)
+        {
+            return 0;
+        }
 
         // 1. Exact matches (Absolute priority)
-        if (item.Id.Equals(term, StringComparison.OrdinalIgnoreCase)) score += 2000;
-        if (item.Slug.Equals(term, StringComparison.OrdinalIgnoreCase) || slugNormalized.Equals(term)) score += 1000;
+        if (item.Id.Equals(term, StringComparison.OrdinalIgnoreCase))
+        {
+            score += 2000;
+        }
+
+        if (item.Slug.Equals(term, StringComparison.OrdinalIgnoreCase) || slugNormalized.Equals(term))
+        {
+            score += 1000;
+        }
 
         // 2. Slug All-Words Match (High priority for 'refactor controller' matching 'refactor-live-mode-controller')
         bool allWordsInSlug = words.All(w => slugNormalized.Contains(w));
-        if (allWordsInSlug) score += 500;
+        if (allWordsInSlug)
+        {
+            score += 500;
+        }
 
         // 3. Word-by-word Slug points
         int matchedSlugWords = words.Count(w => slugNormalized.Contains(w));
@@ -105,14 +131,20 @@ public static class ListCommand
 
         // 4. Content All-Words Match (Medium priority)
         bool allWordsInContent = words.All(w => contentNormalized.Contains(w));
-        if (allWordsInContent) score += 200;
+        if (allWordsInContent)
+        {
+            score += 200;
+        }
 
         // 5. Deep Content points (Only if requested)
         if (deep)
         {
             int matchedContentWords = words.Count(w => contentNormalized.Contains(w));
             score += matchedContentWords * 10;
-            if (contentNormalized.Contains(term)) score += 50;
+            if (contentNormalized.Contains(term))
+            {
+                score += 50;
+            }
         }
 
         return score;

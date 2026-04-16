@@ -28,8 +28,8 @@ Affects `--create`, `--sanitize`, and `--rename`. The configured style is used w
 
 ## Acceptance Criteria
 
-- [ ] `slugs.casing` in config drives slug generation in `--create` and `--rename`
-- [ ] `--sanitize` respects configured casing and does not normalise valid slugs to kebab
-- [ ] Default `kebab` preserves all existing behaviour
-- [ ] `markban init` writes `slugs.casing: "kebab"` in the explicit defaults output (see [explicit-defaults-in-init])
-- [ ] Invalid casing value produces a clear config error
+- [x] `slugs.casing` in config drives slug generation in `--create` and `--rename`
+- [x] `--sanitize` respects configured casing and does not normalise valid slugs to kebab
+- [x] Default `kebab` preserves all existing behaviour
+- [x] `markban init` writes `slugs.casing: "kebab"` in the explicit defaults output (see [explicit-defaults-in-init])
+- [x] Invalid casing value produces a clear config error

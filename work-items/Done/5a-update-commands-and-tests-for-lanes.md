@@ -30,10 +30,10 @@ Once `markban.json` lane config is in place (parent [configurable-lanes]), every
 
 ## Acceptance Criteria
 
-- [ ] All commands listed above read lane list from config (or defaults if not configured)
-- [ ] No hardcoded lane name strings remain outside of the default config definition
-- [ ] `--move` rejects a lane not in config with a clear error listing valid lanes
-- [ ] `--reorder` rejects an unordered lane with a clear error
-- [ ] Integration tests updated -- `TestWorkspace` can be configured with custom lanes
-- [ ] New integration test covers a board with fully custom lane names
-- [ ] Help text for `--move` and `--create --lane` reflects configured lanes at runtime
+- [x] All commands listed above read lane list from config (or defaults if not configured)
+- [x] No hardcoded lane name strings remain outside of the default config definition
+- [x] `--move` rejects a lane not in config with a clear error listing valid lanes
+- [x] `--reorder` rejects an unordered lane with a clear error
+- [x] Integration tests updated -- `TestWorkspace` can be configured with custom lanes
+- [x] New integration test covers a board with fully custom lane names
+- [x] Help text for `--move` and `--create --lane` reflects configured lanes at runtime

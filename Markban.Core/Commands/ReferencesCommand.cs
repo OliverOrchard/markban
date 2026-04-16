@@ -21,19 +21,25 @@ public static class ReferencesCommand
         {
             var folderPath = Path.Combine(rootPath, folder);
             if (!Directory.Exists(folderPath))
+            {
                 continue;
+            }
 
             foreach (var file in Directory.GetFiles(folderPath, "*.md"))
             {
                 var fileName = Path.GetFileName(file);
                 if (fileName.StartsWith("."))
+                {
                     continue;
+                }
 
                 var lines = File.ReadAllLines(file);
                 for (int i = 0; i < lines.Length; i++)
                 {
                     if (!pattern.IsMatch(lines[i]))
+                    {
                         continue;
+                    }
 
                     var item = items.FirstOrDefault(it =>
                         it.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
@@ -74,18 +80,24 @@ public static class ReferencesCommand
         var byId = items.FirstOrDefault(i =>
             i.Id.Equals(target, StringComparison.OrdinalIgnoreCase));
         if (byId != null)
+        {
             return byId.Slug;
+        }
 
         // If it matches a slug exactly, return it
         var bySlug = items.FirstOrDefault(i =>
             i.Slug.Equals(target, StringComparison.OrdinalIgnoreCase));
         if (bySlug != null)
+        {
             return bySlug.Slug;
+        }
 
         // Could be a slug that doesn't exist (agent typed it) \u2014 still allow it
         // so the command can report "no references found" rather than erroring
         if (target.Contains('-'))
+        {
             return target;
+        }
 
         return null;
     }

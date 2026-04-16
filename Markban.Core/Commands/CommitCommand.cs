@@ -8,20 +8,27 @@ public static class CommitCommand
         "feat", "fix", "docs", "style", "refactor", "test", "build", "ci", "chore", "revert", "perf"
     ];
 
-    private const int MaxMessageChars = 72;
+    public static IReadOnlyList<string> GetValidTags(string rootPath)
+    {
+        var configured = WorkItemStore.LoadSettings(rootPath).CommitTags;
+        return configured != null && configured.Count > 0 ? configured : ValidTags;
+    }
 
     public static async Task ExecuteAsync(string rootPath, string identifier, string tag, string message, bool dryRun = false)
     {
-        if (!ValidTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        var settings = WorkItemStore.LoadSettings(rootPath);
+        var validTags = GetValidTags(rootPath);
+
+        if (!validTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine($"Error: Invalid tag '{tag}'. Valid tags: {string.Join(", ", ValidTags)}");
+            Console.Error.WriteLine($"Error: Invalid tag '{tag}'. Valid tags: {string.Join(", ", validTags)}");
             return;
         }
 
         tag = tag.ToLowerInvariant();
         message = message.Trim();
 
-        var msgError = ValidateMessage(message);
+        var msgError = ValidateMessage(message, settings.CommitMaxMessageLength);
         if (msgError != null)
         {
             Console.Error.WriteLine($"Error: {msgError}");
@@ -42,11 +49,25 @@ public static class CommitCommand
         var repoRoot = Path.GetDirectoryName(rootPath)!;
         var commitMessage = $"{tag}: {message}";
 
+        var lanes = WorkItemStore.LoadConfig(rootPath);
+        var doneLanes = lanes.Where(l => l.Type == "done").ToList();
+        if (doneLanes.Count == 0)
+        {
+            Console.Error.WriteLine("Error: No lane with type 'done' configured. Add \"type\": \"done\" to a lane in markban.json.");
+            return;
+        }
+        if (doneLanes.Count > 1)
+        {
+            Console.Error.WriteLine($"Error: Multiple lanes have type 'done' ({string.Join(", ", doneLanes.Select(l => l.Name))}). Only one is allowed.");
+            return;
+        }
+        var doneLane = doneLanes[0];
+
         if (dryRun)
         {
             Console.WriteLine("=== DRY RUN — nothing will be changed ===");
             Console.WriteLine();
-            Console.WriteLine($"Would move '{item.Id}' ({item.Slug}) from {item.Status} -> Done");
+            Console.WriteLine($"Would move '{item.Id}' ({item.Slug}) from {item.Status} -> {doneLane.Name}");
             Console.WriteLine();
             Console.WriteLine("Current git status:");
             await RunGitAsync(repoRoot, "status", "--short");
@@ -60,8 +81,8 @@ public static class CommitCommand
             return;
         }
 
-        Console.WriteLine($"Moving '{item.Id}' ({item.Slug}) to Done...");
-        MoveCommand.Execute(rootPath, identifier, "Done");
+        Console.WriteLine($"Moving '{item.Id}' ({item.Slug}) to {doneLane.Name}...");
+        MoveCommand.Execute(rootPath, identifier, doneLane.Name);
 
         Console.WriteLine();
         Console.WriteLine("git add .");
@@ -94,22 +115,30 @@ public static class CommitCommand
         Console.WriteLine($"Done. Committed and pushed: {commitMessage}");
     }
 
-    internal static string? ValidateMessage(string message)
+    internal static string? ValidateMessage(string message, int maxLen = 72)
     {
         if (string.IsNullOrWhiteSpace(message))
+        {
             return "Message cannot be empty.";
+        }
 
-        if (message.Length > MaxMessageChars)
-            return $"Message is too long ({message.Length} chars, max {MaxMessageChars}). Keep it to one short sentence.";
+        if (message.Length > maxLen)
+        {
+            return $"Message is too long ({message.Length} chars, max {maxLen}). Keep it to one short sentence.";
+        }
 
         // Detect multiple sentences: sentence-ending punctuation followed by more text
         if (Regex.IsMatch(message, @"[.!?]\s+\S"))
+        {
             return "Message looks like more than one sentence. Keep commits to a single, concise thought.";
+        }
 
         // Detect excessive conjunctions that suggest a run-on list
         var andCount = Regex.Matches(message, @"\band\b", RegexOptions.IgnoreCase).Count;
         if (andCount >= 3)
+        {
             return "Message looks like a run-on list. Pick the one key thing this commit does.";
+        }
 
         return null;
     }
@@ -122,7 +151,9 @@ public static class CommitCommand
             UseShellExecute = false,
         };
         foreach (var arg in gitArgs)
+        {
             psi.ArgumentList.Add(arg);
+        }
 
         using var proc = Process.Start(psi)!;
         await proc.WaitForExitAsync();

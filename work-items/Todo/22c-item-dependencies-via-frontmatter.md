@@ -48,3 +48,9 @@ Depends on [frontmatter-layer] (item 21).
 - [ ] `markban list --json` includes `dependsOn` array in output
 - [ ] `markban references <slug>` includes items that list it in `dependsOn`
 - [ ] Circular dependency detection: warn but do not crash
+- [ ] Feature is gated by `dependsOn: { "enabled": true }` in `markban.json` (default: `true` when absent)
+- [ ] When `enabled: false`, `markban depends-on` commands show a clear error: "The 'dependsOn' feature is disabled in your config"
+- [ ] When `enabled: false`, no `dependsOn` frontmatter field is written by any command (including `create`)
+- [ ] When `enabled: false`, `markban help depends-on` is absent from command listing
+- [ ] When `enabled: false`, `markban next` does not apply dependency-blocking logic
+- [ ] `markban init` writes `dependsOn: { "enabled": true }` as an explicit default

@@ -1,5 +1,5 @@
-using Markban.IntegrationTests.Infrastructure;
 using AwesomeAssertions;
+using Markban.IntegrationTests.Infrastructure;
 using Xunit;
 
 namespace Markban.IntegrationTests;

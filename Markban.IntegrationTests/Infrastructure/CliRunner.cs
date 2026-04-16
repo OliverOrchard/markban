@@ -17,7 +17,9 @@ public static class CliRunner
         psi.ArgumentList.Add("--root");
         psi.ArgumentList.Add(rootPath);
         foreach (var arg in args)
+        {
             psi.ArgumentList.Add(arg);
+        }
 
         using var proc = Process.Start(psi)!;
         var stdoutTask = proc.StandardOutput.ReadToEndAsync();
@@ -47,7 +49,9 @@ public static class CliRunner
         };
         psi.ArgumentList.Add(dllPath);
         foreach (var arg in args)
+        {
             psi.ArgumentList.Add(arg);
+        }
 
         using var proc = Process.Start(psi)!;
         var stdoutTask = proc.StandardOutput.ReadToEndAsync();

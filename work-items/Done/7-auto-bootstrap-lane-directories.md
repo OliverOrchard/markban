@@ -14,8 +14,8 @@ Behaviour:
 
 ## Acceptance Criteria
 
-- [ ] `markban --create "Title" --lane ideas` succeeds even if `ideas/` does not exist
-- [ ] `markban --move <id> Done` succeeds even if `Done/` does not exist
-- [ ] No output is produced when directories are auto-created
-- [ ] Existing directories and their contents are untouched
-- [ ] Unit test covering the missing-lane scenario
+- [x] `markban --create "Title" --lane ideas` succeeds even if `ideas/` does not exist
+- [x] `markban --move <id> Done` succeeds even if `Done/` does not exist
+- [x] No output is produced when directories are auto-created
+- [x] Existing directories and their contents are untouched
+- [x] Unit test covering the missing-lane scenario

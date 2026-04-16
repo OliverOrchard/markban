@@ -3,8 +3,9 @@ using System.Text.RegularExpressions;
 
 public static class MoveCommand
 {
-    public static void Execute(string rootPath, string identifier, string targetFolder)
+    public static void Execute(string rootPath, string identifier, string targetFolder, bool overrideWip = false)
     {
+        WorkItemStore.EnsureLaneDirectories(rootPath);
         var items = WorkItemStore.LoadAll(rootPath);
         var item = items.FirstOrDefault(i => i.Id == identifier || i.Slug == identifier);
 
@@ -14,16 +15,19 @@ public static class MoveCommand
             return;
         }
 
-        var validFolders = new[] { "Todo", "In Progress", "Testing", "Done", "Ideas", "Rejected" };
-        var normalizedTarget = validFolders.FirstOrDefault(f =>
-            f.Equals(targetFolder, StringComparison.OrdinalIgnoreCase) ||
-            f.Replace(" ", "").Equals(targetFolder.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
+        var lanes = WorkItemStore.LoadConfig(rootPath);
+        var targetLane = lanes.FirstOrDefault(l =>
+            l.Name.Equals(targetFolder, StringComparison.OrdinalIgnoreCase) ||
+            l.Name.Replace(" ", "").Equals(targetFolder.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
 
-        if (normalizedTarget == null)
+        if (targetLane == null)
         {
-            Console.WriteLine($"Error: Target folder '{targetFolder}' is invalid. Valid: Todo, In Progress, Testing, Done, Ideas, Rejected.");
+            var valid = string.Join(", ", lanes.Select(l => l.Name));
+            Console.WriteLine($"Error: Target folder '{targetFolder}' is invalid. Valid: {valid}");
             return;
         }
+
+        var normalizedTarget = targetLane.Name;
 
         if (item.Status == normalizedTarget)
         {
@@ -31,18 +35,31 @@ public static class MoveCommand
             return;
         }
 
+        if (!overrideWip && targetLane.Wip.HasValue)
+        {
+            var count = items.Count(i => i.Status == normalizedTarget);
+            if (count >= targetLane.Wip.Value)
+            {
+                Console.WriteLine($"Error: '{normalizedTarget}' is at its WIP limit ({count}/{targetLane.Wip.Value}).");
+                Console.WriteLine($"Use --override-wip to proceed anyway, or move an item out first.");
+                return;
+            }
+        }
+
+        var sourceLane = lanes.FirstOrDefault(l => l.Name.Equals(item.Status, StringComparison.OrdinalIgnoreCase));
+
         // Determine destination filename
         string newFileName;
-        if (normalizedTarget == "Ideas" || normalizedTarget == "Rejected")
+        if (!targetLane.Ordered)
         {
-            // Strip number prefix when archiving: "42-slug.md" / "42a-slug.md" -> "slug.md"
+            // Strip number prefix when moving to an unordered lane: "42-slug.md" -> "slug.md"
             newFileName = Regex.Replace(item.FileName, @"^\d+[a-z]?-", "");
         }
-        else if (item.Status == "Ideas" || item.Status == "Rejected")
+        else if (sourceLane?.Ordered == false)
         {
-            // Assign next safe number when promoting an idea into the kanban
+            // Assign next safe number when promoting from an unordered lane to an ordered lane
             var maxId = items
-                .Where(i => i.Status != "Ideas" && i.Status != "Rejected" && !string.IsNullOrEmpty(i.Id))
+                .Where(i => !string.IsNullOrEmpty(i.Id))
                 .Select(i => { var m = Regex.Match(i.Id, @"^(\d+)"); return m.Success ? int.Parse(m.Groups[1].Value) : 0; })
                 .DefaultIfEmpty(0)
                 .Max();
@@ -67,9 +84,8 @@ public static class MoveCommand
         var displayId = string.IsNullOrEmpty(item.Id) ? item.Slug : $"{item.Id} - {item.Slug}";
         Console.WriteLine($"Successfully moved '{displayId}' to {normalizedTarget} as '{newFileName}'.");
 
-        // Auto-compact source folder if we moved from a numbered lane to Ideas/Rejected
-        if ((normalizedTarget == "Ideas" || normalizedTarget == "Rejected")
-            && item.Status != "Ideas" && item.Status != "Rejected")
+        // Auto-compact source folder if we moved from an ordered lane to an unordered lane
+        if (!targetLane.Ordered && sourceLane?.Ordered == true)
         {
             CompactFolder(rootPath, item.Status);
         }
@@ -90,14 +106,21 @@ public static class MoveCommand
             .ToList();
 
         var primaryNumbers = folderItems.Where(x => x.Letter == "").Select(x => x.Number).ToList();
-        if (primaryNumbers.Count < 2) return;
+        if (primaryNumbers.Count < 2)
+        {
+            return;
+        }
 
         bool hasGaps = false;
         for (int i = 1; i < primaryNumbers.Count; i++)
         {
-            if (primaryNumbers[i] != primaryNumbers[i - 1] + 1) { hasGaps = true; break; }
+            if (primaryNumbers[i] != primaryNumbers[i - 1] + 1)
+            { hasGaps = true; break; }
         }
-        if (!hasGaps) return;
+        if (!hasGaps)
+        {
+            return;
+        }
 
         Console.WriteLine($"Compacting {folder} to close gaps...");
         var orderStr = string.Join(",", primaryNumbers);

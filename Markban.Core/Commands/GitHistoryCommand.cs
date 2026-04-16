@@ -85,7 +85,11 @@ public static class GitHistoryCommand
             {
                 // Trim date to just YYYY-MM-DD
                 var date = parts[1].Trim();
-                if (date.Length > 10) date = date[..10];
+                if (date.Length > 10)
+                {
+                    date = date[..10];
+                }
+
                 commits.Add(new CommitInfo(parts[0].Trim(), date, parts[2].Trim()));
             }
         }
@@ -104,7 +108,10 @@ public static class GitHistoryCommand
         foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
             var parts = line.Split('\t');
-            if (parts.Length < 2) continue;
+            if (parts.Length < 2)
+            {
+                continue;
+            }
 
             var status = parts[0].Trim();
             if (status.StartsWith('R') && parts.Length >= 3)
@@ -127,16 +134,27 @@ public static class GitHistoryCommand
 
     internal static bool IsWorkItemPath(string? path)
     {
-        if (string.IsNullOrEmpty(path)) return false;
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
         var normalized = path.Replace('\\', '/');
         return normalized.StartsWith("work-items/") && normalized.EndsWith(".md");
     }
 
     internal static string? ExtractLane(string? path)
     {
-        if (string.IsNullOrEmpty(path)) return null;
+        if (string.IsNullOrEmpty(path))
+        {
+            return null;
+        }
+
         var normalized = path.Replace('\\', '/');
-        if (!normalized.StartsWith("work-items/")) return null;
+        if (!normalized.StartsWith("work-items/"))
+        {
+            return null;
+        }
 
         var remainder = normalized["work-items/".Length..];
         var slashIdx = remainder.IndexOf('/');
@@ -171,7 +189,9 @@ public static class GitHistoryCommand
             CreateNoWindow = true
         };
         foreach (var arg in args)
+        {
             psi.ArgumentList.Add(arg);
+        }
 
         using var proc = Process.Start(psi)!;
         var stdout = await proc.StandardOutput.ReadToEndAsync();
