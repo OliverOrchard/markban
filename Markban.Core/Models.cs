@@ -2,6 +2,13 @@ public record WorkItem(string Id, string Slug, string Status, string Content, st
 public record WorkItemSummary(string Id, string Slug, string Status);
 public record HelpEntry(string Usage, string Description, string? Detail = null);
 public record LaneConfig(string Name, bool Ordered, string? Type = null, bool Pickable = true, int? Wip = null);
+
+/// <summary>A configured board entry resolved from the <c>boards</c> array in markban.json.</summary>
+/// <param name="Name">Display name from config.</param>
+/// <param name="Key">URL-safe, stable identifier derived from the name.</param>
+/// <param name="ResolvedPath">Absolute path from the top-level config to the configured board location.</param>
+public record BoardEntry(string Name, string Key, string ResolvedPath);
+
 public record BoardSettings(
     int CommitMaxMessageLength = 72,
     IReadOnlyList<string>? CommitTags = null,

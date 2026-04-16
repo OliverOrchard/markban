@@ -1,6 +1,4 @@
-# 21a - PR creation on commit with configurable platform CLI
-
-# 16a - PR creation on commit
+# 24a - PR creation on commit with configurable platform CLI
 
 ## Description
 

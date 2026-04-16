@@ -1,7 +1,5 @@
 # 14 - Custom commit message tags
 
-# 15 - Custom commit message tags
-
 ## Description
 
 The valid commit tags (`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore`, `revert`, `perf`) are hardcoded in `CommitCommand.cs`. Allow users to replace or extend this list via `markban.json`.

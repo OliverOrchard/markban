@@ -34,6 +34,27 @@ public class ReorderTests : IDisposable
     }
 
     [Fact]
+    public async Task Reorder_WithStartNumber_RenumbersFromSpecifiedBase()
+    {
+        // Arrange
+        _ws.AddItem("Todo", "10-alpha-task.md", "# 10 - Alpha Task\n\n## Description\n\nFirst");
+        _ws.AddItem("Todo", "11-beta-task.md", "# 11 - Beta Task\n\n## Description\n\nSecond");
+        _ws.AddItem("Todo", "11a-beta-sub-task.md", "# 11a - Beta Sub Task\n\n## Description\n\nSub-item");
+        _ws.AddItem("Todo", "12-gamma-task.md", "# 12 - Gamma Task\n\n## Description\n\nThird");
+
+        // Act
+        var result = await CliRunner.RunAsync(_build.DllPath, _ws.Root, "reorder", "Todo", "12,10,11", "--start-number", "22");
+
+        // Assert
+        result.StdOut.Should().Contain("file(s) renamed");
+        var files = _ws.GetFiles("Todo");
+        files.Should().ContainInOrder("22-gamma-task.md", "23-alpha-task.md", "24-beta-task.md");
+        files.Should().Contain("24a-beta-sub-task.md",
+            because: "sub-items should follow their parent when a custom start number is used");
+        _ws.ReadFile("Todo", "22-gamma-task.md").Should().StartWith("# 22 - Gamma Task");
+    }
+
+    [Fact]
     public async Task Reorder_UpdatesHeadingsToMatchNewNumbers()
     {
         // Arrange

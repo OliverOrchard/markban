@@ -21,8 +21,8 @@ Config shape:
 
 ## Acceptance Criteria
 
-- [ ] Parses `boards` array from `markban.json` when present
-- [ ] Each `path` is resolved relative to the config file, not CWD
-- [ ] Returns `null`/empty when no `boards` key exists (single board mode)
-- [ ] Invalid or missing paths produce a clear error message
-- [ ] Does not require sub-boards to have their own `markban.json`
+- [x] Parses `boards` array from `markban.json` when present
+- [x] Each `path` is resolved relative to the config file, not CWD
+- [x] Returns `null`/empty when no `boards` key exists (single board mode)
+- [x] Invalid or missing paths produce a clear error message
+- [x] Does not require sub-boards to have their own `markban.json`

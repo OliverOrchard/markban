@@ -1,6 +1,4 @@
-# 23 - Cycle time reporting in web UI
-
-# 20 - Cycle time reporting in web UI
+# 26 - Cycle time reporting in web UI
 
 ## Description
 

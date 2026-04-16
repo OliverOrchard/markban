@@ -1,6 +1,4 @@
-# 22a - Blocked items via frontmatter
-
-# 19a - Blocked items
+# 25a - Blocked items via frontmatter
 
 ## Description
 

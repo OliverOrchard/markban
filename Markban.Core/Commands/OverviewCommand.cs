@@ -7,6 +7,55 @@ public static class OverviewCommand
 
     public static void Execute(string rootPath)
     {
+        var configDir = Path.GetDirectoryName(rootPath) ?? rootPath;
+        IReadOnlyList<BoardEntry> boards;
+
+        try
+        {
+            boards = WorkItemStore.LoadBoards(configDir);
+        }
+        catch (InvalidDataException ex)
+        {
+            Console.WriteLine($"Warning: {ex.Message}");
+            Console.WriteLine();
+            PrintBoardProgress(rootPath);
+            return;
+        }
+
+        if (boards.Count > 0)
+        {
+            PrintMultiBoardOverview(boards);
+            return;
+        }
+
+        PrintBoardProgress(rootPath);
+    }
+
+    private static void PrintMultiBoardOverview(IReadOnlyList<BoardEntry> boards)
+    {
+        foreach (var board in boards)
+        {
+            Console.WriteLine($"=== {board.Name} ===");
+            try
+            {
+                var boardRoot = WorkItemStore.ResolveConfiguredBoardRoot(board.ResolvedPath);
+                PrintBoardProgress(boardRoot);
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                Console.WriteLine($"Warning: {ex.Message}");
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine($"Warning: {ex.Message}");
+            }
+
+            Console.WriteLine();
+        }
+    }
+
+    private static void PrintBoardProgress(string rootPath)
+    {
         var lanes = WorkItemStore.LoadConfig(rootPath);
         var items = WorkItemStore.LoadAll(rootPath);
 
@@ -19,15 +68,12 @@ public static class OverviewCommand
         int pct = total > 0 ? (int)Math.Round(100.0 * done / total) : 0;
 
         var sb = new StringBuilder();
-
-        // Progress bar
         int barWidth = 30;
         int filled = total > 0 ? (int)Math.Round((double)barWidth * done / total) : 0;
         sb.Append("[");
         sb.Append(new string('#', filled));
         sb.Append(new string('.', barWidth - filled));
 
-        // Summary counts: done first, then each non-done lane (most advanced first)
         var summaryParts = new List<string> { $"{done} done" };
         foreach (var lane in orderedPickable.Where(l => l.Name != doneLaneName).Reverse())
         {
@@ -38,7 +84,6 @@ public static class OverviewCommand
         sb.AppendLine($"] {pct}% -- {string.Join(", ", summaryParts)}");
         sb.AppendLine();
 
-        // Active lanes (order: most advanced first, i.e. reverse config order, excluding done)
         foreach (var lane in orderedPickable.Where(l => l.Name != doneLaneName).Reverse())
         {
             var laneItems = tracked.Where(i => i.Status == lane.Name).ToList();
@@ -54,10 +99,10 @@ public static class OverviewCommand
                 var prefix = string.IsNullOrEmpty(item.Id) ? "  " : $"  {item.Id}. ";
                 sb.AppendLine($"{prefix}{title}");
             }
+
             sb.AppendLine();
         }
 
-        // Backlog: pickable:false lanes — counts only
         var backlogParts = lanes
             .Where(l => !l.Pickable)
             .Select(l => (l.Name, Count: items.Count(i => i.Status == l.Name)))

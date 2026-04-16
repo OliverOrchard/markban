@@ -1,7 +1,5 @@
 # 12 - Configurable slug casing rules
 
-# 13 - Configurable slug casing rules
-
 ## Description
 
 Slug generation is currently hardcoded: lowercase, spaces to hyphens, strip non-alphanumeric characters. Allow users to configure the casing style via `markban.json`.

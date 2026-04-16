@@ -225,7 +225,10 @@ public class ConfigurableLanesTests : IDisposable
         var lanesJson = "[{\"name\":\"Active\",\"ordered\":true,\"type\":\"ready\"},{\"name\":\"Review\",\"ordered\":true},{\"name\":\"Icebox\",\"ordered\":false,\"pickable\":false},{\"name\":\"Done\",\"ordered\":true,\"type\":\"done\"}]";
         var (projectDir, boardDir) = CreateCustomBoard(lanesJson);
         foreach (var lane in new[] { "Active", "Review", "Icebox", "Done" })
+        {
             Directory.CreateDirectory(Path.Combine(boardDir, lane));
+        }
+
         AddItem(boardDir, "Review", "1-nearly-done.md", "# 1 - Nearly Done\n\n## Description\n\nAlmost there");
 
         // Act

@@ -1,7 +1,5 @@
 # 13 - Configurable commit message max length
 
-# 14 - Configurable commit message max length
-
 ## Description
 
 The commit message character limit is currently hardcoded at 72 characters (`MaxMessageChars` in `CommitCommand.cs`). This is a well-established git convention but not universal -- some teams use 50, some use 100. Make it configurable via `markban.json`.

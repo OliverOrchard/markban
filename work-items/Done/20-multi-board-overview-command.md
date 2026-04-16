@@ -20,7 +20,7 @@ This is purely additive -- no new flags needed, the config drives it.
 
 ## Acceptance Criteria
 
-- [ ] Single board config: output identical to current behaviour
-- [ ] Multi board config: each board printed with its name as a heading
-- [ ] Unreachable board path prints a warning and continues to next board
-- [ ] Exit code 0 in all cases (overview is informational)
+- [x] Single board config: output identical to current behaviour
+- [x] Multi board config: each board printed with its name as a heading
+- [x] Unreachable board path prints a warning and continues to next board
+- [x] Exit code 0 in all cases (overview is informational)

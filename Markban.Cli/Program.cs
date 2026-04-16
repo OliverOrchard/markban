@@ -24,7 +24,8 @@ if (!needsRoot)
     }
     else
     {
-        try { rootPath = WorkItemStore.FindRoot(); }
+        try
+        { rootPath = WorkItemStore.FindRoot(); }
         catch (DirectoryNotFoundException) { rootPath = ""; }
     }
 }

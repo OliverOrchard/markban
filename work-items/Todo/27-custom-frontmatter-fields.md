@@ -1,4 +1,4 @@
-# 24 - Custom frontmatter fields
+# 27 - Custom frontmatter fields
 
 Depends on [frontmatter-layer]
 
@@ -46,7 +46,7 @@ Config defaults are written first; `--set` values are merged on top (overriding 
 
 ### Command transparency
 
-All other commands (`move`, `rename`, `reorder`, `sanitize`, `health`) must pass through unknown frontmatter keys untouched — they read and write only the fields they own.
+All other commands (`move`, `rename`, `reorder`, `sanitize`, `health`) must pass through unknown frontmatter keys untouched -- they read and write only the fields they own.
 
 ### `init` integration
 

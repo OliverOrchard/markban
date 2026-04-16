@@ -12,8 +12,8 @@ See sub-items [parse-boards-config], [add-api-boards-endpoint], [parameterise-ap
 
 ## Acceptance Criteria
 
-- [ ] `markban.json` `boards` array is the sole discovery mechanism -- no filesystem scanning
-- [ ] Absence of `boards` key = single board mode, no UI changes
-- [ ] Board names in the switcher come from the `name` field in each entry
-- [ ] Switching boards reloads items without a full page refresh
-- [ ] Works alongside all existing CLI commands unchanged
+- [x] `markban.json` `boards` array is the sole discovery mechanism -- no filesystem scanning
+- [x] Absence of `boards` key = single board mode, no UI changes
+- [x] Board names in the switcher come from the `name` field in each entry
+- [x] Switching boards reloads items without a full page refresh
+- [x] Works alongside all existing CLI commands unchanged

@@ -261,7 +261,10 @@ public class ConfigAndMultipleBoardsTests : IDisposable
 
         var boardRoot = Path.Combine(parentDir, "board");
         foreach (var lane in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
             Directory.CreateDirectory(Path.Combine(boardRoot, lane));
+        }
+
         File.WriteAllText(
             Path.Combine(boardRoot, "Todo", "1-target-item.md"),
             "# 1 - Target Item\n\n## Description\n\nItem to commit");
@@ -292,7 +295,10 @@ public class ConfigAndMultipleBoardsTests : IDisposable
 
         var boardRoot = Path.Combine(parentDir, "board");
         foreach (var lane in new[] { "Todo", "In Progress", "Testing", "Done", "ideas", "Rejected" })
+        {
             Directory.CreateDirectory(Path.Combine(boardRoot, lane));
+        }
+
         File.WriteAllText(
             Path.Combine(boardRoot, "Todo", "1-release-item.md"),
             "# 1 - Release Item\n\n## Description\n\nTo be released");

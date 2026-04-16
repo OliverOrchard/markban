@@ -1,4 +1,4 @@
-# 22c - Item dependencies via frontmatter
+# 25c - Item dependencies via frontmatter
 
 ## Description
 

@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>markban</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
         <div style="font-weight: bold; color: var(--accent); font-size: 1.2rem;">markban</div>
         <div class="search-container">
-            <input type="text" id="search-box" placeholder="Search by ID, slug, or content..." oninput="filterCards(this.value)">
+            <input type="text" id="search-box" aria-label="Search work items" placeholder="Search by ID, slug, or content..." oninput="filterCards(this.value)">
         </div>
-        <div id="stats" style="font-size: 0.8rem; color: #888;"></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="board-switcher-container" style="display: none;">
+                <select id="board-select" class="board-select" aria-label="Board" onchange="onBoardChange(this.value)">
+                </select>
+            </div>
+            <div id="stats" style="font-size: 0.8rem; color: #888;"></div>
+        </div>
     </header>
     <div class="toolbar" id="toolbar"></div>
     <div class="kanban" id="kanban"><!-- Columns built dynamically from /api/lanes --></div>
@@ -22,7 +27,7 @@
             <div class="detail-header">
                 <div class="move-controls">
                     <span class="detail-status" id="detail-status"></span>
-                    <select class="move-select" id="move-target">
+                    <select class="move-select" id="move-target" aria-label="Move target lane">
                         <option value="">Move to…</option><!-- Options built dynamically from /api/lanes -->
                     </select>
                     <button class="move-btn" id="move-btn" onclick="moveItem()" disabled>Move</button>
@@ -33,6 +38,7 @@
             <div id="detail-content"></div>
         </div>
     </div>
+    <script async src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

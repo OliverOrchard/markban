@@ -1,7 +1,5 @@
 # 10 - rename command - update title and sync filename atomically
 
-# 11 - rename command
-
 ## Description
 
 Add `markban rename <id|slug> "New Title"` to atomically update the H1 heading in the file and rename the file to match the new slug in a single command. Currently this requires two steps: manually editing the H1, then running `markban sanitize`. Having it as an explicit command is also safe for agents and scripts -- no risk of a partial state where the H1 and filename are out of sync.

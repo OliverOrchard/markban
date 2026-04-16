@@ -4,7 +4,7 @@ description: Implements markban features by picking up tasks from the board.
 argument-hint: "Describe a feature or bug, or say 'pick up next' to work from the board."
 tools: [execute/runInTerminal, execute/getTerminalOutput, execute/awaitTerminal, execute/killTerminal, read/readFile, edit/createFile, edit/createDirectory, edit/editFiles, search/fileSearch, search/textSearch, search/listDirectory, search/codebase, search/usages, search/changes, web/fetchWebpage]
 agents: [Explore]
-model: [claude-sonnet-4-6, claude-sonnet-4-5]
+model: claude-sonnet-4-6
 ---
 
 # markban Developer Agent

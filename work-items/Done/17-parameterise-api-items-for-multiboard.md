@@ -8,8 +8,8 @@ Update `GET /api/items` and `POST /api/move` in `WebServer` to accept an optiona
 
 ## Acceptance Criteria
 
-- [ ] `GET /api/items?board=backend` loads items from the correct board root
-- [ ] `POST /api/move` with `?board=backend` moves within the correct board
-- [ ] Unknown `board` key returns a `400` with a clear error
-- [ ] Omitting `?board` falls back to default root -- no behaviour change for single board users
-- [ ] Board key lookup is case-insensitive
+- [x] `GET /api/items?board=backend` loads items from the correct board root
+- [x] `POST /api/move` with `?board=backend` moves within the correct board
+- [x] Unknown `board` key returns a `400` with a clear error
+- [x] Omitting `?board` falls back to default root -- no behaviour change for single board users
+- [x] Board key lookup is case-insensitive

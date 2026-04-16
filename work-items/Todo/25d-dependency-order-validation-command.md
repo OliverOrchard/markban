@@ -1,4 +1,4 @@
-# 22d - Dependency order validation command
+# 25d - Dependency order validation command
 
 ## Description
 

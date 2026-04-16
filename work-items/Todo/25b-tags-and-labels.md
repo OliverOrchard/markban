@@ -1,6 +1,4 @@
-# 22b - Tags and labels via frontmatter with list filtering
-
-# 19b - Tags and labels
+# 25b - Tags and labels via frontmatter with list filtering
 
 ## Description
 

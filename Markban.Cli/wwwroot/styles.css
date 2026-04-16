@@ -43,6 +43,17 @@ header {
     outline: none;
 }
 #search-box:focus { border-color: var(--accent); }
+.board-select {
+    background: #333;
+    border: 1px solid #555;
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+}
+.board-select:focus { border-color: var(--accent); }
 
 .toolbar {
     display: flex;

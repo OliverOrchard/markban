@@ -2,12 +2,65 @@ let allWorkItems = [];
 let currentDetailItem = null;
 let lanes = [];
 let hiddenLanes = new Set();
+let currentBoardKey = null;
+
+const BOARD_STORAGE_KEY = 'markban-board';
+
+async function getJson(url, fallbackMessage) {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || fallbackMessage);
+    }
+
+    return data;
+}
+
+async function initBoards() {
+    try {
+        const boards = await getJson('/api/boards', 'Failed to load boards.');
+        if (!Array.isArray(boards) || boards.length === 0) {
+            return;
+        }
+
+        const container = document.getElementById('board-switcher-container');
+        const select = document.getElementById('board-select');
+        select.innerHTML = '';
+        boards.forEach(board => {
+            const option = document.createElement('option');
+            option.value = board.key;
+            option.textContent = board.name;
+            select.appendChild(option);
+        });
+
+        const savedBoard = localStorage.getItem(BOARD_STORAGE_KEY);
+        const validKey = boards.find(board => board.key === savedBoard)?.key || boards[0].key;
+        select.value = validKey;
+        currentBoardKey = validKey;
+        container.style.display = 'block';
+    } catch (err) {
+        console.error('Failed to load boards:', err);
+    }
+}
+
+function onBoardChange(key) {
+    currentBoardKey = key;
+    localStorage.setItem(BOARD_STORAGE_KEY, key);
+    hiddenLanes = new Set();
+    initLanes().then(() => {
+        buildBoard();
+        loadItems();
+    });
+}
 
 async function initLanes() {
     try {
-        const res = await fetch('/api/lanes');
-        if (res.ok) lanes = await res.json();
-    } catch { /* fall back to empty; board will show items unsorted */ }
+        const url = currentBoardKey ? `/api/lanes?board=${encodeURIComponent(currentBoardKey)}` : '/api/lanes';
+        lanes = await getJson(url, 'Failed to load lanes.');
+    } catch (err) {
+        lanes = [];
+        console.error('Failed to load lanes:', err);
+    }
 }
 
 function buildBoard() {
@@ -22,81 +75,94 @@ function buildBoard() {
         col.setAttribute('data-lane', lane);
         col.innerHTML = `<h2>${lane} <span class="col-count"></span></h2><div class="cards" id="${colId}"></div>`;
         kanban.appendChild(col);
-        const opt = document.createElement('option');
-        opt.value = lane;
-        opt.textContent = lane;
-        moveSelect.appendChild(opt);
+        const option = document.createElement('option');
+        option.value = lane;
+        option.textContent = lane;
+        moveSelect.appendChild(option);
     });
 }
 
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeDetail();
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+        closeDetail();
+    }
 });
 
 window.addEventListener('hashchange', () => {
     const slug = window.location.hash.slice(1);
     if (slug) {
-        const item = allWorkItems.find(i => i.slug === slug);
-        if (item) showDetail(item, false);
+        const item = allWorkItems.find(workItem => workItem.slug === slug);
+        if (item) {
+            showDetail(item, false);
+        }
     } else {
         closeDetail(false);
     }
 });
 
 function buildToolbar() {
-    const tb = document.getElementById('toolbar');
-    tb.innerHTML = '';
+    const toolbar = document.getElementById('toolbar');
+    toolbar.innerHTML = '';
     lanes.forEach(lane => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn active';
-        btn.setAttribute('data-lane', lane);
-        const count = allWorkItems.filter(i => i.status === lane).length;
-        btn.innerHTML = `${lane}<span class="count">(${count})</span>`;
-        btn.onclick = () => toggleLane(lane, btn);
-        tb.appendChild(btn);
+        const button = document.createElement('button');
+        button.className = 'filter-btn active';
+        button.setAttribute('data-lane', lane);
+        const count = allWorkItems.filter(item => item.status === lane).length;
+        button.innerHTML = `${lane}<span class="count">(${count})</span>`;
+        button.onclick = () => toggleLane(lane, button);
+        toolbar.appendChild(button);
     });
-    const sep = document.createElement('div');
-    sep.className = 'toolbar-separator';
-    tb.appendChild(sep);
+
+    const separator = document.createElement('div');
+    separator.className = 'toolbar-separator';
+    toolbar.appendChild(separator);
+
     const refresh = document.createElement('button');
     refresh.className = 'refresh-btn';
     refresh.textContent = '\u21bb Refresh';
     refresh.onclick = () => loadItems();
-    tb.appendChild(refresh);
+    toolbar.appendChild(refresh);
 }
 
-function toggleLane(lane, btn) {
-    const col = document.querySelector(`.column[data-lane="${lane}"]`);
+function toggleLane(lane, button) {
+    const column = document.querySelector(`.column[data-lane="${lane}"]`);
     if (hiddenLanes.has(lane)) {
         hiddenLanes.delete(lane);
-        btn.classList.add('active');
-        col.style.display = '';
-    } else {
-        hiddenLanes.add(lane);
-        btn.classList.remove('active');
-        col.style.display = 'none';
+        button.classList.add('active');
+        column.style.display = '';
+        return;
     }
+
+    hiddenLanes.add(lane);
+    button.classList.remove('active');
+    column.style.display = 'none';
 }
 
 function updateColumnCounts() {
-    document.querySelectorAll('.column').forEach(col => {
-        const count = col.querySelectorAll('.card:not(.hidden)').length;
-        const span = col.querySelector('.col-count');
-        if (span) span.textContent = `(${count})`;
+    document.querySelectorAll('.column').forEach(column => {
+        const count = column.querySelectorAll('.card:not(.hidden)').length;
+        const span = column.querySelector('.col-count');
+        if (span) {
+            span.textContent = `(${count})`;
+        }
     });
 }
 
 async function loadItems() {
     try {
-        const res = await fetch('/api/items');
-        allWorkItems = await res.json();
+        const url = currentBoardKey ? `/api/items?board=${encodeURIComponent(currentBoardKey)}` : '/api/items';
+        allWorkItems = await getJson(url, 'Failed to load work items.');
 
-        document.querySelectorAll('.cards').forEach(c => c.innerHTML = '');
+        document.querySelectorAll('.cards').forEach(cards => {
+            cards.innerHTML = '';
+        });
 
         allWorkItems.forEach(item => {
             const colId = `col-${item.status.replace(' ', '-')}`;
-            const col = document.getElementById(colId);
-            if (!col) return;
+            const column = document.getElementById(colId);
+            if (!column) {
+                return;
+            }
 
             const card = document.createElement('div');
             card.className = `card ${item.status.replace(' ', '-')}`;
@@ -108,12 +174,16 @@ async function loadItems() {
             card.draggable = true;
             card.addEventListener('dragstart', onCardDragStart);
             card.addEventListener('dragend', onCardDragEnd);
-            card.onclick = (e) => {
-                if (wasDragging) { wasDragging = false; return; }
-                e.preventDefault();
+            card.onclick = event => {
+                if (wasDragging) {
+                    wasDragging = false;
+                    return;
+                }
+
+                event.preventDefault();
                 showDetail(item);
             };
-            col.appendChild(card);
+            column.appendChild(card);
         });
 
         updateStats();
@@ -121,18 +191,24 @@ async function loadItems() {
         buildToolbar();
         setupDropZones();
 
-        // Re-hide lanes that were toggled off before refresh
         hiddenLanes.forEach(lane => {
-            const col = document.querySelector(`.column[data-lane="${lane}"]`);
-            if (col) col.style.display = 'none';
-            const btn = document.querySelector(`.filter-btn[data-lane="${lane}"]`);
-            if (btn) btn.classList.remove('active');
+            const column = document.querySelector(`.column[data-lane="${lane}"]`);
+            if (column) {
+                column.style.display = 'none';
+            }
+
+            const button = document.querySelector(`.filter-btn[data-lane="${lane}"]`);
+            if (button) {
+                button.classList.remove('active');
+            }
         });
 
         const initialSlug = window.location.hash.slice(1);
         if (initialSlug) {
-            const item = allWorkItems.find(i => i.slug === initialSlug);
-            if (item) showDetail(item, false);
+            const item = allWorkItems.find(workItem => workItem.slug === initialSlug);
+            if (item) {
+                showDetail(item, false);
+            }
         }
     } catch (err) {
         console.error('Failed to load work items:', err);
@@ -140,8 +216,7 @@ async function loadItems() {
 }
 
 function filterCards(term) {
-    term = term.toLowerCase();
-    const words = term.split(' ').filter(w => w.length > 0);
+    const words = term.toLowerCase().split(' ').filter(word => word.length > 0);
 
     document.querySelectorAll('.card').forEach(card => {
         if (words.length === 0) {
@@ -152,17 +227,16 @@ function filterCards(term) {
         const id = card.getAttribute('data-id').toLowerCase();
         const slug = card.getAttribute('data-slug').replace(/-/g, ' ').toLowerCase();
         const content = card.getAttribute('data-content');
-
-        const matchesAll = words.every(word =>
-            id.includes(word) || slug.includes(word) || content.includes(word)
-        );
+        const matchesAll = words.every(word => id.includes(word) || slug.includes(word) || content.includes(word));
 
         if (matchesAll) {
             card.classList.remove('hidden');
-        } else {
-            card.classList.add('hidden');
+            return;
         }
+
+        card.classList.add('hidden');
     });
+
     updateStats();
     updateColumnCounts();
 }
@@ -187,8 +261,8 @@ function showDetail(item, updateHash = true) {
     moveBtn.disabled = true;
     feedback.textContent = '';
 
-    Array.from(moveTarget.options).forEach(opt => {
-        opt.disabled = opt.value === item.status;
+    Array.from(moveTarget.options).forEach(option => {
+        option.disabled = option.value === item.status;
     });
 
     moveTarget.onchange = () => {
@@ -197,14 +271,17 @@ function showDetail(item, updateHash = true) {
     };
 
     try {
-        if (updateHash) window.location.hash = item.slug;
+        if (updateHash) {
+            window.location.hash = item.slug;
+        }
 
         let html = marked.parse(item.content);
         html = html.replace(/\[([a-z0-9-]+)\]/g, (match, slug) => {
-            const target = allWorkItems.find(i => i.slug === slug);
+            const target = allWorkItems.find(workItem => workItem.slug === slug);
             if (target) {
                 return `<a href="#${slug}" style="color: var(--accent); text-decoration: underline; font-weight: bold;">[${slug}]</a>`;
             }
+
             return match;
         });
 
@@ -221,34 +298,43 @@ function showDetail(item, updateHash = true) {
 function closeDetail(updateHash = true) {
     document.getElementById('detail-pane').classList.remove('open');
     currentDetailItem = null;
-    if (updateHash) window.location.hash = '';
+    if (updateHash) {
+        window.location.hash = '';
+    }
 }
 
 async function moveItem() {
-    if (!currentDetailItem) return;
-    const target = document.getElementById('move-target').value;
-    if (!target) return;
+    if (!currentDetailItem) {
+        return;
+    }
 
-    const btn = document.getElementById('move-btn');
+    const target = document.getElementById('move-target').value;
+    if (!target) {
+        return;
+    }
+
+    const button = document.getElementById('move-btn');
     const feedback = document.getElementById('move-feedback');
-    btn.disabled = true;
+    button.disabled = true;
     feedback.className = '';
     feedback.textContent = 'Moving\u2026';
 
     const identifier = currentDetailItem.id || currentDetailItem.slug;
     try {
-        const res = await fetch('/api/move', {
+        const moveUrl = currentBoardKey ? `/api/move?board=${encodeURIComponent(currentBoardKey)}` : '/api/move';
+        const response = await fetch(moveUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identifier, target })
         });
-        const data = await res.json();
-        if (!res.ok) {
+        const data = await response.json();
+        if (!response.ok) {
             feedback.className = 'move-err';
             feedback.textContent = data.error || 'Move failed';
-            btn.disabled = false;
+            button.disabled = false;
             return;
         }
+
         feedback.className = 'move-msg';
         feedback.textContent = data.message;
         closeDetail();
@@ -256,46 +342,47 @@ async function moveItem() {
     } catch (err) {
         feedback.className = 'move-err';
         feedback.textContent = 'Network error';
-        btn.disabled = false;
+        button.disabled = false;
     }
 }
-
-// --- Drag and drop ---
 
 let draggedId = null;
 let draggedStatus = null;
 let wasDragging = false;
 
-function onCardDragStart(e) {
-    draggedId = e.currentTarget.getAttribute('data-id');
-    draggedStatus = e.currentTarget.getAttribute('data-status');
+function onCardDragStart(event) {
+    draggedId = event.currentTarget.getAttribute('data-id');
+    draggedStatus = event.currentTarget.getAttribute('data-status');
     wasDragging = true;
-    e.currentTarget.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
+    event.currentTarget.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
 }
 
-function onCardDragEnd(e) {
-    e.currentTarget.classList.remove('dragging');
-    document.querySelectorAll('.cards.drag-over').forEach(el => el.classList.remove('drag-over'));
+function onCardDragEnd(event) {
+    event.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.cards.drag-over').forEach(element => element.classList.remove('drag-over'));
 }
 
 function setupDropZones() {
     document.querySelectorAll('.cards').forEach(zone => {
-        zone.addEventListener('dragover', e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
+        zone.addEventListener('dragover', event => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
             zone.classList.add('drag-over');
         });
-        zone.addEventListener('dragleave', e => {
-            if (!zone.contains(e.relatedTarget)) {
+        zone.addEventListener('dragleave', event => {
+            if (!zone.contains(event.relatedTarget)) {
                 zone.classList.remove('drag-over');
             }
         });
-        zone.addEventListener('drop', async e => {
-            e.preventDefault();
+        zone.addEventListener('drop', async event => {
+            event.preventDefault();
             zone.classList.remove('drag-over');
             const targetLane = zone.closest('.column').getAttribute('data-lane');
-            if (!draggedId || targetLane === draggedStatus) return;
+            if (!draggedId || targetLane === draggedStatus) {
+                return;
+            }
+
             await moveItemById(draggedId, targetLane);
             draggedId = null;
             draggedStatus = null;
@@ -305,20 +392,25 @@ function setupDropZones() {
 
 async function moveItemById(identifier, target) {
     try {
-        const res = await fetch('/api/move', {
+        const moveUrl = currentBoardKey ? `/api/move?board=${encodeURIComponent(currentBoardKey)}` : '/api/move';
+        const response = await fetch(moveUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identifier, target })
         });
-        if (res.ok) {
+        if (response.ok) {
             await loadItems();
-        } else {
-            const data = await res.json();
-            console.error('Move failed:', data.error);
+            return;
         }
+
+        const data = await response.json();
+        console.error('Move failed:', data.error);
     } catch (err) {
         console.error('Network error during drag-move:', err);
     }
 }
 
-initLanes().then(() => { buildBoard(); loadItems(); });
+initBoards().then(() => initLanes()).then(() => {
+    buildBoard();
+    loadItems();
+});

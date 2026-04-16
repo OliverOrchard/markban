@@ -1,7 +1,5 @@
 # 11 - Configurable H1 heading - opt out via markban.json
 
-# 12 - Configurable H1 heading
-
 ## Description
 
 Allow users to opt out of the auto-generated `# N - Title` H1 heading via `markban.json`. This is relevant when using a custom template that already defines its own structure, or when users prefer to manage titles themselves.

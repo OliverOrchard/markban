@@ -3,27 +3,17 @@ using System.Text.RegularExpressions;
 
 public static class WorkItemStore
 {
+    private const string ConfigFileName = "markban.json";
+
     public static string FindRoot(string? startDir = null)
     {
         var current = startDir ?? Directory.GetCurrentDirectory();
         while (current != null)
         {
-            var configPath = Path.Combine(current, "markban.json");
-            if (File.Exists(configPath))
+            var configuredRoot = TryGetConfiguredRootPath(current, throwOnInvalidJson: false);
+            if (configuredRoot != null)
             {
-                try
-                {
-                    using var doc = JsonDocument.Parse(File.ReadAllText(configPath));
-                    if (doc.RootElement.TryGetProperty("rootPath", out var el))
-                    {
-                        var relPath = el.GetString();
-                        if (!string.IsNullOrWhiteSpace(relPath))
-                        {
-                            return Path.GetFullPath(Path.Combine(current, relPath));
-                        }
-                    }
-                }
-                catch (JsonException) { }
+                return configuredRoot;
             }
 
             var potential = Path.Combine(current, "work-items");
@@ -34,6 +24,7 @@ public static class WorkItemStore
 
             current = Directory.GetParent(current)?.FullName;
         }
+
         throw new DirectoryNotFoundException("Could not find 'work-items' directory in any parent path.");
     }
 
@@ -45,7 +36,7 @@ public static class WorkItemStore
             return BoardConfig.DefaultLanes;
         }
 
-        var configPath = Path.Combine(projectDir, "markban.json");
+        var configPath = GetConfigPath(projectDir);
         if (!File.Exists(configPath))
         {
             return BoardConfig.DefaultLanes;
@@ -80,7 +71,7 @@ public static class WorkItemStore
             return new BoardSettings();
         }
 
-        var configPath = Path.Combine(projectDir, "markban.json");
+        var configPath = GetConfigPath(projectDir);
         if (!File.Exists(configPath))
         {
             return new BoardSettings();
@@ -128,6 +119,68 @@ public static class WorkItemStore
         {
             return new BoardSettings();
         }
+    }
+
+    public static IReadOnlyList<BoardEntry> LoadBoards(string configDir)
+    {
+        var configPath = GetConfigPath(configDir);
+        if (!File.Exists(configPath))
+        {
+            return [];
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(configPath));
+            if (!doc.RootElement.TryGetProperty("boards", out var boardsEl))
+            {
+                return [];
+            }
+
+            if (boardsEl.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidDataException("Invalid 'boards' config: expected an array.");
+            }
+
+            var boards = boardsEl.EnumerateArray()
+                .Select((element, index) => ParseBoardEntry(element, configDir, index))
+                .ToList();
+
+            EnsureUniqueBoardKeys(boards);
+            return boards;
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException($"Invalid markban.json at '{configPath}': {ex.Message}", ex);
+        }
+    }
+
+    public static string ResolveConfiguredBoardRoot(string boardPath)
+    {
+        if (!Directory.Exists(boardPath))
+        {
+            throw new DirectoryNotFoundException($"Board path not found: {boardPath}");
+        }
+
+        var configuredRoot = TryGetConfiguredRootPath(boardPath, throwOnInvalidJson: true);
+        if (configuredRoot != null)
+        {
+            return EnsureBoardRootExists(configuredRoot, boardPath);
+        }
+
+        var nestedBoardRoot = Path.Combine(boardPath, "work-items");
+        if (Directory.Exists(nestedBoardRoot))
+        {
+            return nestedBoardRoot;
+        }
+
+        if (LooksLikeBoardRoot(boardPath))
+        {
+            return boardPath;
+        }
+
+        throw new DirectoryNotFoundException(
+            $"Board path '{boardPath}' does not contain a work-items directory or board lanes.");
     }
 
     public static void EnsureLaneDirectories(string root)
@@ -186,6 +239,107 @@ public static class WorkItemStore
         return new LaneConfig(name!, ordered, type, pickable, wip);
     }
 
+    private static BoardEntry ParseBoardEntry(JsonElement element, string configDir, int index)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException($"Invalid boards[{index}] entry: expected an object.");
+        }
+
+        var name = GetRequiredBoardValue(element, "name", index);
+        var configuredPath = GetRequiredBoardValue(element, "path", index);
+        var key = SlugHelper.Generate(name);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new InvalidDataException($"Invalid boards[{index}] entry: name '{name}' does not produce a usable key.");
+        }
+
+        return new BoardEntry(name, key, Path.GetFullPath(Path.Combine(configDir, configuredPath)));
+    }
+
+    private static string GetRequiredBoardValue(JsonElement element, string propertyName, int index)
+    {
+        if (!element.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
+        {
+            throw new InvalidDataException($"Invalid boards[{index}] entry: '{propertyName}' must be a non-empty string.");
+        }
+
+        var value = property.GetString();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidDataException($"Invalid boards[{index}] entry: '{propertyName}' must be a non-empty string.");
+        }
+
+        return value;
+    }
+
+    private static void EnsureUniqueBoardKeys(IReadOnlyList<BoardEntry> boards)
+    {
+        var duplicateKey = boards
+            .GroupBy(board => board.Key, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1);
+
+        if (duplicateKey != null)
+        {
+            throw new InvalidDataException(
+                $"Duplicate board key '{duplicateKey.Key}' in 'boards'. Rename one of the boards to make its key unique.");
+        }
+    }
+
+    private static string? TryGetConfiguredRootPath(string configDir, bool throwOnInvalidJson)
+    {
+        var configPath = GetConfigPath(configDir);
+        if (!File.Exists(configPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(configPath));
+            if (!doc.RootElement.TryGetProperty("rootPath", out var rootPathElement))
+            {
+                return null;
+            }
+
+            var relativePath = rootPathElement.GetString();
+            return string.IsNullOrWhiteSpace(relativePath)
+                ? null
+                : Path.GetFullPath(Path.Combine(configDir, relativePath));
+        }
+        catch (JsonException) when (!throwOnInvalidJson)
+        {
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException($"Invalid markban.json at '{configPath}': {ex.Message}", ex);
+        }
+    }
+
+    private static string EnsureBoardRootExists(string boardRoot, string boardPath)
+    {
+        if (!Directory.Exists(boardRoot))
+        {
+            throw new DirectoryNotFoundException(
+                $"Board '{boardPath}' resolves to a missing root path: {boardRoot}");
+        }
+
+        return boardRoot;
+    }
+
+    private static bool LooksLikeBoardRoot(string boardPath)
+    {
+        var laneDirectories = Directory.GetDirectories(boardPath)
+            .Select(Path.GetFileName)
+            .OfType<string>()
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return BoardConfig.DefaultLanes.Any(lane => laneDirectories.Contains(lane.Name));
+    }
+
+    private static string GetConfigPath(string configDir) => Path.Combine(configDir, ConfigFileName);
+
     private static string? FindLaneDirectory(string root, string laneName)
     {
         var exact = Path.Combine(root, laneName);
@@ -238,7 +392,7 @@ public static class WorkItemStore
         foreach (var file in Directory.GetFiles(path, "*.md").OrderBy(f => f))
         {
             var fileName = Path.GetFileName(file);
-            if (fileName.StartsWith("."))
+            if (fileName.StartsWith('.'))
             {
                 continue;
             }
@@ -254,4 +408,3 @@ public static class WorkItemStore
         }
     }
 }
-

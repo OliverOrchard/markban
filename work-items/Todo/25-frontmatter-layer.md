@@ -1,6 +1,4 @@
-# 22 - Frontmatter layer - auto-managed metadata above template body
-
-# 19 - Frontmatter layer
+# 25 - Frontmatter layer - auto-managed metadata above template body
 
 ## Description
 

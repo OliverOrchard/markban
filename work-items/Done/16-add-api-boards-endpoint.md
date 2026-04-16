@@ -19,7 +19,7 @@ Response shape:
 
 ## Acceptance Criteria
 
-- [ ] `GET /api/boards` returns the configured board list
-- [ ] Returns `[]` when no `boards` key in config (not a 404)
-- [ ] `key` values are URL-safe and stable across restarts
-- [ ] No-cache headers consistent with `/api/items`
+- [x] `GET /api/boards` returns the configured board list
+- [x] Returns `[]` when no `boards` key in config (not a 404)
+- [x] `key` values are URL-safe and stable across restarts
+- [x] No-cache headers consistent with `/api/items`
