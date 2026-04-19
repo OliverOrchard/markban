@@ -1,4 +1,13 @@
-public record WorkItem(string Id, string Slug, string Status, string Content, string FileName, string FullPath);
+public record WorkItem(
+    string Id,
+    string Slug,
+    string Status,
+    string Content,
+    string FileName,
+    string FullPath,
+    string? Blocked = null,
+    IReadOnlyList<string>? Tags = null,
+    IReadOnlyList<string>? DependsOn = null);
 public record WorkItemSummary(string Id, string Slug, string Status);
 public record HelpEntry(string Usage, string Description, string? Detail = null);
 public record LaneConfig(string Name, bool Ordered, string? Type = null, bool Pickable = true, int? Wip = null);
@@ -13,7 +22,23 @@ public record BoardSettings(
     int CommitMaxMessageLength = 72,
     IReadOnlyList<string>? CommitTags = null,
     bool HeadingEnabled = true,
-    string SlugCasing = "kebab");
+    string SlugCasing = "kebab",
+    bool BlockedEnabled = true,
+    bool TagsEnabled = true,
+    bool DependsOnEnabled = true,
+    IReadOnlyList<CustomFrontmatterField>? CustomFrontmatter = null,
+    FeatureBranchSettings? FeatureBranches = null);
+
+public record CustomFrontmatterField(string Name, string? Default, bool HasDefault = false);
+
+public record FeatureBranchSettings(
+    bool Enabled = false,
+    string MainBranch = "main",
+    string CommitStrategy = "single",
+    bool PullOnStart = true,
+    bool CheckoutOnDone = true,
+    string? PrCommand = null,
+    string BranchPrefix = "feature/");
 
 public static class BoardConfig
 {

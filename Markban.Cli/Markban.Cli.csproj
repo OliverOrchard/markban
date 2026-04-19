@@ -11,7 +11,7 @@
     <AssemblyName>markban</AssemblyName>
     <ToolCommandName>markban</ToolCommandName>
     <PackageId>markban</PackageId>
-    <Version>0.4.0</Version>
+    <Version>0.4.5</Version>
     <Authors>Oliver Orchard</Authors>
     <Description>markban - a markdown board CLI and web UI for developer work item tracking</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

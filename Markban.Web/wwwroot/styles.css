@@ -130,6 +130,11 @@ header {
 
 .card-id { font-weight: bold; color: var(--accent); margin-right: 8px; }
 
+.card-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.badge { font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600; letter-spacing: 0.3px; }
+.badge-blocked { background: rgba(220, 50, 50, 0.25); color: #e05c5c; border: 1px solid rgba(220, 50, 50, 0.4); }
+.badge-tag { background: rgba(255, 0, 255, 0.1); color: #cc88cc; border: 1px solid rgba(255, 0, 255, 0.2); }
+
 #detail-pane {
     position: fixed;
     top: 0;

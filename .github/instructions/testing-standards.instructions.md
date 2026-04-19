@@ -24,6 +24,16 @@ Add a `because:` string to assertions where the failure message would not be sel
 
 3. **Integration tests** live in `Markban.IntegrationTests/` and run the real CLI binary end-to-end via `CliRunner`. Follow the existing fixture pattern (`ToolBuildFixture`, `TestWorkspace`).
 
+4. **Playwright UI tests** live in `Markban.IntegrationTests/Web/Ui/`. Use `WebTestServer.StartAsync()` to spin up the real Kestrel server on a free port, then drive it with Playwright. Always call `PlaywrightInstaller.EnsureChromiumInstalledAsync()` before launching a browser. Use `page.WaitForFunctionAsync` / `Locator.WaitForAsync` to synchronise — never use `Task.Delay`. Standard setup:
+   ```csharp
+   await using var server = await WebTestServer.StartAsync(_build.DllPath, boardRoot);
+   await PlaywrightInstaller.EnsureChromiumInstalledAsync();
+   using var playwright = await Playwright.CreateAsync();
+   await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+   var page = await browser.NewPageAsync();
+   ```
+   Web API tests (no browser) live in `Markban.IntegrationTests/Web/Api/` and use `server.Client` (`HttpClient`) directly.
+
 ## Running tests
 
 ```powershell

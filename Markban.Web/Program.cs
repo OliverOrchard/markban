@@ -42,6 +42,26 @@ app.MapPost("/api/move", async (HttpContext context) =>
     return Results.Ok(new { message });
 });
 
+app.MapGet("/api/reports/cycle-time", async (HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+    try
+    {
+        var entries = await CycleTimeCommand.ExecuteAsync(rootPath);
+        return Results.Ok(entries);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(detail: ex.Message, title: "Failed to compute cycle time");
+    }
+});
+
+app.MapGet("/reports/cycle-time", (HttpContext context) =>
+{
+    context.Response.Redirect("/reports/cycle-time.html", permanent: false);
+    return Results.Empty;
+});
+
 app.Run();
 
 internal record MoveRequest(string Identifier, string Target);

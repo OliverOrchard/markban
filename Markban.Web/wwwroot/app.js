@@ -2,6 +2,27 @@ let allWorkItems = [];
 let currentDetailItem = null;
 const lanes = ['Todo', 'In Progress', 'Testing', 'Done', 'Ideas', 'Rejected'];
 let hiddenLanes = new Set();
+let activeTagFilter = null;
+
+function esc(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function buildCardBadges(item) {
+    let html = '';
+    if (item.blocked) {
+        html += `<span class="badge badge-blocked" title="${esc(item.blocked)}">⊘ blocked</span>`;
+    }
+
+    if (item.tags && item.tags.length > 0) {
+        html += item.tags.map(t => `<span class="badge badge-tag" data-tag="${esc(t)}" onclick="filterByTag('${esc(t)}')">${esc(t)}</span>`).join('');
+    }
+
+    return html ? `<div class="card-badges">${html}</div>` : '';
+}
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeDetail();
@@ -54,9 +75,16 @@ function toggleLane(lane, btn) {
 
 function updateColumnCounts() {
     document.querySelectorAll('.column').forEach(col => {
+        const lane = col.getAttribute('data-lane');
         const count = col.querySelectorAll('.card:not(.hidden)').length;
         const span = col.querySelector('.col-count');
         if (span) span.textContent = `(${count})`;
+
+        const blockedCount = allWorkItems.filter(i => i.status === lane && i.blocked).length;
+        const blockedSpan = col.querySelector('.col-blocked-count');
+        if (blockedSpan) {
+            blockedSpan.textContent = blockedCount > 0 ? ` · ${blockedCount} blocked` : '';
+        }
     });
 }
 
@@ -78,7 +106,9 @@ async function loadItems() {
             card.setAttribute('data-slug', item.slug);
             card.setAttribute('data-content', item.content.toLowerCase());
             card.setAttribute('data-status', item.status);
-            card.innerHTML = `<span class="card-id">${item.id}</span>${item.slug}`;
+            card.setAttribute('data-tags', item.tags ? item.tags.join(',') : '');
+            const cardBadges = buildCardBadges(item);
+            card.innerHTML = `<span class="card-id">${esc(item.id)}</span>${esc(item.slug)}${cardBadges}`;
             card.draggable = true;
             card.addEventListener('dragstart', onCardDragStart);
             card.addEventListener('dragend', onCardDragEnd);
@@ -137,6 +167,40 @@ function filterCards(term) {
             card.classList.add('hidden');
         }
     });
+    updateStats();
+    updateColumnCounts();
+}
+
+function filterByTag(tag) {
+    if (activeTagFilter === tag) {
+        activeTagFilter = null;
+    } else {
+        activeTagFilter = tag;
+    }
+
+    document.querySelectorAll('.card').forEach(card => {
+        if (!activeTagFilter) {
+            card.classList.remove('hidden');
+            return;
+        }
+
+        const tags = card.getAttribute('data-tags') || '';
+        const cardTags = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        if (cardTags.includes(activeTagFilter)) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    document.querySelectorAll('.badge-tag').forEach(badge => {
+        if (badge.getAttribute('data-tag') === activeTagFilter) {
+            badge.classList.add('active');
+        } else {
+            badge.classList.remove('active');
+        }
+    });
+
     updateStats();
     updateColumnCounts();
 }

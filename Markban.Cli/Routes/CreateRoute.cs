@@ -3,7 +3,7 @@ public class CreateRoute : CommandRoute
     public override string? SubCommand => "create";
 
     public override HelpEntry Help => new HelpEntry(
-        "create \"Title\" [--lane <lane>] [--after <id>] [--priority] [--override-wip]",
+        "create \"Title\" [--lane <lane>] [--after <id>] [--priority] [--override-wip] [--tags <t1,t2>] [--set key=value]",
         "Create a new work item (--sub-item --parent <id> for sub-items)",
         "  \"Title\"             required - work item title\n" +
         "  --lane <lane>      target lane (default: Todo)\n" +
@@ -11,13 +11,36 @@ public class CreateRoute : CommandRoute
         "  --priority         insert at top of the lane\n" +
         "  --sub-item         create as sub-item (requires --parent)\n" +
         "  --parent <id>      parent item ID when using --sub-item\n" +
-        "  --override-wip     bypass the WIP limit for the target lane");
+        "  --override-wip     bypass the WIP limit for the target lane\n" +
+        "  --tags <t1,t2>     comma-separated tags to apply (requires tags enabled)\n" +
+        "  --set key=value    set a custom frontmatter field (repeatable)");
+
+    public override HelpEntry GetHelp(string rootPath)
+    {
+        var settings = WorkItemStore.LoadSettings(rootPath);
+        if (settings.TagsEnabled)
+        {
+            return Help;
+        }
+
+        return new HelpEntry(
+            "create \"Title\" [--lane <lane>] [--after <id>] [--priority] [--override-wip] [--set key=value]",
+            "Create a new work item (--sub-item --parent <id> for sub-items)",
+            "  \"Title\"             required - work item title\n" +
+            "  --lane <lane>      target lane (default: Todo)\n" +
+            "  --after <id>       insert after this item ID\n" +
+            "  --priority         insert at top of the lane\n" +
+            "  --sub-item         create as sub-item (requires --parent)\n" +
+            "  --parent <id>      parent item ID when using --sub-item\n" +
+            "  --override-wip     bypass the WIP limit for the target lane\n" +
+            "  --set key=value    set a custom frontmatter field (repeatable)");
+    }
 
     private static readonly HashSet<string> KnownFlags = new(StringComparer.OrdinalIgnoreCase)
-        { "--lane", "--after", "--priority", "--sub-item", "--parent", "--override-wip" };
+        { "--lane", "--after", "--priority", "--sub-item", "--parent", "--override-wip", "--tags", "--set" };
 
     private static readonly HashSet<string> ValueFlags = new(StringComparer.OrdinalIgnoreCase)
-        { "--lane", "--after", "--parent" };
+        { "--lane", "--after", "--parent", "--tags", "--set" };
 
     public override bool TryRoute(string[] args, string rootPath)
     {
@@ -63,6 +86,18 @@ public class CreateRoute : CommandRoute
 
         bool topPriority = args.Contains("--priority");
 
+        List<string>? initialTags = null;
+        if (args.Contains("--tags"))
+        {
+            var ti = Array.IndexOf(args, "--tags");
+            if (ti + 1 < args.Length)
+            {
+                initialTags = [.. args[ti + 1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+            }
+        }
+
+        var setFields = CollectSetFields(args);
+
         if (args.Contains("--sub-item"))
         {
             string? parentId = null;
@@ -85,8 +120,31 @@ public class CreateRoute : CommandRoute
         else
         {
             bool overrideWip = args.Contains("--override-wip");
-            CreateCommand.Execute(rootPath, title, lane, afterId, topPriority, overrideWip);
+            CreateCommand.Execute(rootPath, title, lane, afterId, topPriority, overrideWip, initialTags, setFields);
         }
         return true;
+    }
+
+    private static Dictionary<string, string>? CollectSetFields(string[] args)
+    {
+        Dictionary<string, string>? result = null;
+        for (var i = 0; i < args.Length - 1; i++)
+        {
+            if (!args[i].Equals("--set", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var pair = args[i + 1];
+            var eq = pair.IndexOf('=');
+            if (eq <= 0)
+            {
+                continue;
+            }
+
+            result ??= [];
+            result[pair[..eq].Trim()] = pair[(eq + 1)..].Trim();
+        }
+        return result;
     }
 }

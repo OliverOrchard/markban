@@ -55,6 +55,27 @@ public static class ReferencesCommand
             }
         }
 
+        // Also include items that list targetSlug in their dependsOn frontmatter
+        var alreadyFound = results.Select(r => r.FileName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            if (alreadyFound.Contains(item.FileName))
+            {
+                continue;
+            }
+
+            if (!foldersToScan.Any(f => item.Status.Equals(f, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            var deps = item.DependsOn ?? FrontmatterParser.GetListField(item.Content, "dependsOn");
+            if (deps != null && deps.Any(d => d.Equals(targetSlug, StringComparison.OrdinalIgnoreCase)))
+            {
+                results.Add(new Reference(item.FileName, item.Id, item.Slug, item.Status, 1));
+            }
+        }
+
         return results;
     }
 

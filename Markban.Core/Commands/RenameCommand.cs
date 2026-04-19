@@ -50,8 +50,7 @@ public static class RenameCommand
         if (settings.HeadingEnabled)
         {
             var newH1 = string.IsNullOrEmpty(item.Id) ? $"# {newTitle}" : $"# {item.Id} - {newTitle}";
-            var h1Pattern = new Regex(@"^#\s+.+$", RegexOptions.Multiline);
-            content = h1Pattern.Replace(content, newH1, 1);
+            content = ReplaceFirstH1AfterFrontmatter(content, newH1);
         }
 
         File.WriteAllText(item.FullPath, content, new UTF8Encoding(false));
@@ -80,5 +79,40 @@ public static class RenameCommand
 
         var displayId = string.IsNullOrEmpty(item.Id) ? item.Slug : $"{item.Id} - {item.Slug}";
         Console.WriteLine($"Renamed '{displayId}' to '{newFileName}'.");
+    }
+
+    /// <summary>
+    /// Replaces the first H1 heading found after any frontmatter block, leaving YAML comments inside
+    /// frontmatter untouched.
+    /// </summary>
+    private static string ReplaceFirstH1AfterFrontmatter(string content, string newH1)
+    {
+        var bodyStart = 0;
+
+        if (content.StartsWith("---\n") || content.StartsWith("---\r\n"))
+        {
+            var afterOpen = content.IndexOf('\n') + 1;
+            var closeIdx = content.IndexOf("\n---", afterOpen, StringComparison.Ordinal);
+            if (closeIdx >= 0)
+            {
+                bodyStart = closeIdx + 4; // past \n---
+                // Skip \r if present
+                if (bodyStart < content.Length && content[bodyStart] == '\r')
+                {
+                    bodyStart++;
+                }
+
+                // Skip \n
+                if (bodyStart < content.Length && content[bodyStart] == '\n')
+                {
+                    bodyStart++;
+                }
+            }
+        }
+
+        var h1Pattern = new Regex(@"^#\s+.+$", RegexOptions.Multiline);
+        var bodySection = content[bodyStart..];
+        var updatedBody = h1Pattern.Replace(bodySection, newH1, 1);
+        return content[..bodyStart] + updatedBody;
     }
 }

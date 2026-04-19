@@ -108,6 +108,29 @@ public static class WebServer
             return Results.Ok(new { message });
         });
 
+        app.MapGet("/api/reports/cycle-time", async (HttpContext context) =>
+        {
+            context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var error);
+            if (resolvedRoot is null)
+            {
+                return Results.BadRequest(new { error });
+            }
+
+            try
+            {
+                var entries = await CycleTimeCommand.ExecuteAsync(resolvedRoot);
+                return Results.Ok(entries);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(detail: ex.Message, title: "Failed to compute cycle time");
+            }
+        });
+
+        app.MapGet("/reports/cycle-time", (HttpContext context) =>
+            Results.Redirect("/reports/cycle-time.html", permanent: false));
+
         Console.WriteLine($"markban board running at {url}");
 
         if (!noOpen)

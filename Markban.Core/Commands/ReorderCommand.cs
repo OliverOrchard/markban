@@ -179,10 +179,11 @@ public static class ReorderCommand
         {
             var finalPath = Path.Combine(folderPath, entry.NewName);
             var lines = File.ReadAllLines(finalPath, Encoding.UTF8);
-            if (lines.Length > 0 && Regex.IsMatch(lines[0], @"^# \d+[a-z]? - .+$"))
+            var headingIdx = FindHeadingLine(lines);
+            if (headingIdx >= 0 && Regex.IsMatch(lines[headingIdx], @"^# \d+[a-z]? - .+$"))
             {
-                var titleMatch = Regex.Match(lines[0], @"^# \d+[a-z]? - (.+)$");
-                lines[0] = $"# {entry.NewHeadingId} - {titleMatch.Groups[1].Value}";
+                var titleMatch = Regex.Match(lines[headingIdx], @"^# \d+[a-z]? - (.+)$");
+                lines[headingIdx] = $"# {entry.NewHeadingId} - {titleMatch.Groups[1].Value}";
                 File.WriteAllLines(finalPath, lines, new UTF8Encoding(false));
                 headingsUpdated++;
             }
@@ -190,5 +191,38 @@ public static class ReorderCommand
 
         var changed = renamePlan.Count(e => e.Changed);
         Console.WriteLine($"\n{changed} file(s) renamed, {headingsUpdated} heading(s) updated.");
+    }
+
+    /// <summary>
+    /// Returns the index of the first H1 heading line, skipping any frontmatter block.
+    /// Returns -1 if no heading is found.
+    /// </summary>
+    private static int FindHeadingLine(string[] lines)
+    {
+        var i = 0;
+
+        // Skip frontmatter block (--- ... ---)
+        if (lines.Length > 0 && lines[0].TrimEnd() == "---")
+        {
+            i = 1;
+            while (i < lines.Length && lines[i].TrimEnd() != "---")
+            {
+                i++;
+            }
+
+            i++; // step past closing ---
+        }
+
+        while (i < lines.Length)
+        {
+            if (lines[i].StartsWith("# "))
+            {
+                return i;
+            }
+
+            i++;
+        }
+
+        return -1;
     }
 }

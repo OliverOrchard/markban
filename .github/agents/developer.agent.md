@@ -149,6 +149,8 @@ Key reminders:
 - Always `// Arrange` / `// Act` / `// Assert` markers.
 - AwesomeAssertions `.Should()` — never `Assert.*`.
 - Run `dotnet test` — all tests must pass before moving an item to Testing.
+- Web UI tests use **Playwright** (Chromium, headless). Infrastructure is in `Markban.IntegrationTests/Infrastructure/`: `WebTestServer`, `PlaywrightInstaller`. See testing-standards for the standard setup pattern.
+- Web API tests (no browser) use `WebTestServer.Client` (`HttpClient`) directly. Lives in `Web/Api/`.
 
 ---
 

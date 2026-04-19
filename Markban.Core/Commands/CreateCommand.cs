@@ -3,7 +3,16 @@ using System.Text.RegularExpressions;
 
 public static class CreateCommand
 {
-    public static void Execute(string rootPath, string title, string? lane, string? afterId, bool topPriority, bool overrideWip = false)
+    private const string ReservedCustomFrontmatterName = "customFrontmatter";
+
+    private static readonly HashSet<string> ReservedFrontmatterKeys = new(StringComparer.OrdinalIgnoreCase)
+        { "blocked", "tags", "dependsOn", "customFrontmatter" };
+
+    public static void Execute(
+        string rootPath, string title, string? lane, string? afterId, bool topPriority,
+        bool overrideWip = false,
+        IReadOnlyList<string>? initialTags = null,
+        IReadOnlyDictionary<string, string>? setFields = null)
     {
         WorkItemStore.EnsureLaneDirectories(rootPath);
         var settings = WorkItemStore.LoadSettings(rootPath);
@@ -11,6 +20,22 @@ public static class CreateCommand
         {
             Console.Error.WriteLine($"Error: Invalid slug casing '{settings.SlugCasing}' in markban.json. Valid values: kebab, snake, camel, pascal.");
             return;
+        }
+
+        if (!settings.TagsEnabled && initialTags?.Count > 0)
+        {
+            Console.Error.WriteLine("Error: The 'tags' feature is disabled in your config. Remove --tags or enable 'tags' in markban.json.");
+            return;
+        }
+
+        if (setFields != null)
+        {
+            var reservedKey = setFields.Keys.FirstOrDefault(k => ReservedFrontmatterKeys.Contains(k));
+            if (reservedKey != null)
+            {
+                Console.Error.WriteLine($"Error: '--set {reservedKey}=...' is not allowed. '{reservedKey}' is a reserved key managed by markban.");
+                return;
+            }
         }
 
         var lanes = WorkItemStore.LoadConfig(rootPath);
@@ -103,15 +128,18 @@ public static class CreateCommand
         var fileName = string.IsNullOrEmpty(newId) ? $"{slug}.md" : $"{newId}-{slug}.md";
         var filePath = Path.Combine(rootPath, normalizedLane, fileName);
 
-        var content = new StringBuilder();
+        var bodyContent = new StringBuilder();
         if (settings.HeadingEnabled)
         {
-            content.AppendLine($"# {(string.IsNullOrEmpty(newId) ? "" : newId + " - ")}{title}");
-            content.AppendLine();
+            bodyContent.AppendLine($"# {(string.IsNullOrEmpty(newId) ? "" : newId + " - ")}{title}");
+            bodyContent.AppendLine();
         }
-        content.Append(GetTemplateBody(rootPath));
+        bodyContent.Append(GetTemplateBody(rootPath));
 
-        File.WriteAllText(filePath, content.ToString(), new UTF8Encoding(false));
+        var fileContent = BuildContentWithFrontmatter(
+            bodyContent.ToString(), settings, initialTags, setFields);
+
+        File.WriteAllText(filePath, fileContent, new UTF8Encoding(false));
 
         Console.WriteLine($"Successfully created '{fileName}' in {normalizedLane}.");
 
@@ -269,19 +297,71 @@ public static class CreateCommand
         var fileName = $"{newId}-{slug}.md";
         var filePath = Path.Combine(rootPath, normalizedLane, fileName);
 
-        var content = new StringBuilder();
+        var bodyContent = new StringBuilder();
         if (settings.HeadingEnabled)
         {
-            content.AppendLine($"# {newId} - {title}");
-            content.AppendLine();
+            bodyContent.AppendLine($"# {newId} - {title}");
+            bodyContent.AppendLine();
         }
-        content.Append(GetTemplateBody(rootPath));
+        bodyContent.Append(GetTemplateBody(rootPath));
 
-        File.WriteAllText(filePath, content.ToString(), new UTF8Encoding(false));
+        var fileContent = BuildContentWithFrontmatter(bodyContent.ToString(), settings, null, null);
+        File.WriteAllText(filePath, fileContent, new UTF8Encoding(false));
 
         Console.WriteLine($"Successfully created sub-item '{fileName}' in {normalizedLane}.");
 
         SanitizeCommand.Execute(rootPath, WorkItemStore.LoadAll(rootPath));
+    }
+
+    private static string BuildContentWithFrontmatter(
+        string body,
+        BoardSettings settings,
+        IReadOnlyList<string>? initialTags,
+        IReadOnlyDictionary<string, string>? setFields)
+    {
+        var (fields, existingBody) = FrontmatterParser.Parse(body);
+
+        if (settings.TagsEnabled && initialTags?.Count > 0)
+        {
+            fields["tags"] = initialTags.ToList();
+        }
+
+        if (settings.BlockedEnabled && !fields.ContainsKey("blocked"))
+        {
+            // no default value — omitted unless set
+        }
+
+        foreach (var customField in settings.CustomFrontmatter ?? [])
+        {
+            if (setFields != null && setFields.TryGetValue(customField.Name, out var override_))
+            {
+                fields[customField.Name] = override_;
+            }
+            else if (customField.HasDefault)
+            {
+                // When Default is null (JSON "default": null), store object null so SerializeField writes YAML null
+                fields[customField.Name] = (object?)customField.Default;
+            }
+        }
+
+        if (setFields != null)
+        {
+            foreach (var kvp in setFields)
+            {
+                if (ReservedFrontmatterKeys.Contains(kvp.Key))
+                {
+                    Console.Error.WriteLine($"Warning: '--set {kvp.Key}=...' ignored — '{kvp.Key}' is managed by markban. Use the dedicated command instead.");
+                    continue;
+                }
+
+                if (!(settings.CustomFrontmatter ?? []).Any(f => f.Name == kvp.Key))
+                {
+                    fields[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+
+        return FrontmatterParser.BuildContent(fields, existingBody);
     }
 
     private static string GetTemplateBody(string rootPath)
@@ -347,16 +427,50 @@ public static class CreateCommand
             var finalPath = Path.Combine(folderPath, kvp.Key);
             File.Move(kvp.Value, finalPath);
 
-            // Update header
+            // Update header (skips frontmatter if present)
             var lines = File.ReadAllLines(finalPath, Encoding.UTF8);
-            if (lines.Length > 0 && Regex.IsMatch(lines[0], @"^# \d+[a-z]? - .+$"))
+            var headingIdx = FindHeadingLine(lines);
+            if (headingIdx >= 0 && Regex.IsMatch(lines[headingIdx], @"^# \d+[a-z]? - .+$"))
             {
                 var m = Regex.Match(kvp.Key, @"^(\d+[a-z]?)");
                 var newHeadingId = m.Groups[1].Value;
-                var titleMatch = Regex.Match(lines[0], @"^# \d+[a-z]? - (.+)$");
-                lines[0] = $"# {newHeadingId} - {titleMatch.Groups[1].Value}";
+                var titleMatch = Regex.Match(lines[headingIdx], @"^# \d+[a-z]? - (.+)$");
+                lines[headingIdx] = $"# {newHeadingId} - {titleMatch.Groups[1].Value}";
                 File.WriteAllLines(finalPath, lines, new UTF8Encoding(false));
             }
         }
+    }
+
+    /// <summary>
+    /// Returns the index of the first H1 heading line, skipping any frontmatter block.
+    /// Returns -1 if no heading is found.
+    /// </summary>
+    private static int FindHeadingLine(string[] lines)
+    {
+        var i = 0;
+
+        // Skip frontmatter block (--- ... ---)
+        if (lines.Length > 0 && lines[0].TrimEnd() == "---")
+        {
+            i = 1;
+            while (i < lines.Length && lines[i].TrimEnd() != "---")
+            {
+                i++;
+            }
+
+            i++; // step past closing ---
+        }
+
+        while (i < lines.Length)
+        {
+            if (lines[i].StartsWith("# "))
+            {
+                return i;
+            }
+
+            i++;
+        }
+
+        return -1;
     }
 }

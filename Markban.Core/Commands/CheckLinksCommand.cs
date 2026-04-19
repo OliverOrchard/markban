@@ -4,6 +4,7 @@ public static class CheckLinksCommand
 {
     public record BrokenLink(string FileName, string Slug, int Line, List<string> Suggestions);
     public record NumericRef(string FileName, string RawRef, int Line, string? ResolvedSlug);
+    public record BrokenDependency(string FileName, string DependsOnSlug, List<string> Suggestions);
 
     public static (List<BrokenLink> Broken, List<NumericRef> NumericRefs) Execute(string rootPath, List<WorkItem> items, bool includeIdeas = false)
     {
@@ -134,9 +135,30 @@ public static class CheckLinksCommand
             .ToList();
     }
 
-    public static void PrintResults(List<BrokenLink> broken, List<NumericRef> numericRefs)
+    public static List<BrokenDependency> ValidateDependsOn(List<WorkItem> items)
     {
-        if (broken.Count == 0 && numericRefs.Count == 0)
+        var knownSlugs = items.Select(i => i.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var broken = new List<BrokenDependency>();
+
+        foreach (var item in items)
+        {
+            var deps = DependsOnCommand.GetDependencies(item.Content);
+            foreach (var dep in deps)
+            {
+                if (!knownSlugs.Contains(dep))
+                {
+                    broken.Add(new BrokenDependency(item.FileName, dep, FindSuggestions(dep, items)));
+                }
+            }
+        }
+
+        return broken;
+    }
+
+    public static void PrintResults(List<BrokenLink> broken, List<NumericRef> numericRefs,
+        List<BrokenDependency>? brokenDeps = null)
+    {
+        if (broken.Count == 0 && numericRefs.Count == 0 && (brokenDeps == null || brokenDeps.Count == 0))
         {
             Console.WriteLine("No broken links found.");
             return;
@@ -184,6 +206,31 @@ public static class CheckLinksCommand
                     else
                     {
                         Console.WriteLine($"      -> Could not resolve to a known work item");
+                    }
+                }
+            }
+        }
+
+        if (brokenDeps != null && brokenDeps.Count > 0)
+        {
+            Console.WriteLine($"\nFound {brokenDeps.Count} broken dependsOn reference(s):\n");
+            var grouped = brokenDeps.GroupBy(d => d.FileName);
+            foreach (var group in grouped)
+            {
+                Console.WriteLine($"  {group.Key}:");
+                foreach (var dep in group)
+                {
+                    Console.WriteLine($"    dependsOn: [{dep.DependsOnSlug}]");
+                    if (dep.Suggestions.Count > 0)
+                    {
+                        foreach (var suggestion in dep.Suggestions)
+                        {
+                            Console.WriteLine($"      -> Did you mean: {suggestion}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"      -> No potential matches found");
                     }
                 }
             }

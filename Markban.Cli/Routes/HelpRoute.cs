@@ -23,7 +23,10 @@ public class HelpRoute : CommandRoute
             }
         }
 
-        HelpCommand.Execute(CommandRouter.Routes.Select(r => r.GetHelp(rootPath)).ToList());
+        HelpCommand.Execute(CommandRouter.Routes
+            .Where(r => r.IsVisible(rootPath))
+            .Select(r => r.GetHelp(rootPath))
+            .ToList());
         return true;
     }
 }

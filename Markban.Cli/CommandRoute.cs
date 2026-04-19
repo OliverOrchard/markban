@@ -3,6 +3,7 @@ public abstract class CommandRoute
     public abstract bool TryRoute(string[] args, string rootPath);
     public abstract HelpEntry Help { get; }
     public virtual HelpEntry GetHelp(string rootPath) => Help;
+    public virtual bool IsVisible(string rootPath) => true;
 
     public virtual string? SubCommand => null;
 

@@ -23,7 +23,7 @@ Changes required:
 
 - [ ] `markban commit 15,16,17 --tag feat --message "..."` moves all three items to Done and produces one git commit
 - [ ] `markban commit 15 16 17 --tag ...` (space-separated) also works
-- [ ] Single-item usage unchanged — no behaviour regression
+- [ ] Single-item usage unchanged -- no behaviour regression
 - [ ] `--dry-run` lists all items that would be moved and the single commit that would be made
 - [ ] Unknown item ID in the list aborts with a clear error before any moves or git operations
 - [ ] Help text updated to show new syntax

@@ -21,6 +21,11 @@ public static class CommandRouter
         new ReferencesRoute(),
         new GitHistoryRoute(),
         new CommitRoute(),
+        new BlockRoute(),
+        new TagRoute(),
+        new DependsOnRoute(),
+        new CycleTimeRoute(),
+        new StartRoute(),
     ];
 
     public static bool Route(string[] args, string rootPath)

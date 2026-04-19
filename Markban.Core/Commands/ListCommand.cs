@@ -36,6 +36,24 @@ public static class ListCommand
             }
         }
 
+        if (args.Contains("--filter-tag"))
+        {
+            var ti = Array.FindIndex(args, a => a == "--filter-tag");
+            if (ti >= 0 && ti + 1 < args.Length)
+            {
+                var filterTags = args[ti + 1]
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => t.Trim().ToLowerInvariant())
+                    .ToList();
+
+                items = items.Where(i =>
+                {
+                    var itemTags = TagCommand.GetTags(i.Content);
+                    return filterTags.Any(ft => itemTags.Any(it => it.Equals(ft, StringComparison.OrdinalIgnoreCase)));
+                }).ToList();
+            }
+        }
+
         if (args.Contains("--summary") || args.Contains("-s"))
         {
             var summaries = items.Select(i => new WorkItemSummary(i.Id, i.Slug, i.Status)).ToList();
@@ -67,9 +85,10 @@ public static class ListCommand
         Console.WriteLine(JsonSerializer.Serialize(results, JsonOptions));
     }
 
-    public static void ExecuteNext(string rootPath)
+    public static void ExecuteNext(string rootPath, bool includeBlocked = false)
     {
         var lanes = WorkItemStore.LoadConfig(rootPath);
+        var settings = WorkItemStore.LoadSettings(rootPath);
         var readyLane = lanes.FirstOrDefault(l => l.Type == "ready");
         if (readyLane == null)
         {
@@ -78,11 +97,46 @@ public static class ListCommand
         }
 
         var items = WorkItemStore.LoadAll(rootPath);
-        var next = items.Where(i => i.Status == readyLane.Name)
+        var doneLane = lanes.FirstOrDefault(l => l.Type == "done");
+
+        var candidates = items.Where(i => i.Status == readyLane.Name);
+
+        if (!includeBlocked && settings.BlockedEnabled)
+        {
+            candidates = candidates.Where(i => !BlockCommand.IsBlocked(i.Content));
+        }
+
+        if (!includeBlocked && settings.DependsOnEnabled)
+        {
+            var doneItems = doneLane != null
+                ? items.Where(i => i.Status == doneLane.Name).Select(i => i.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            candidates = candidates.Where(i => !HasUnresolvedDependencies(i.Content, items, doneItems));
+        }
+
+        var next = candidates
             .OrderBy(i => { var m = Regex.Match(i.Id, @"^(\d+)"); return m.Success ? int.Parse(m.Groups[1].Value) : int.MaxValue; })
             .ThenBy(i => { var m = Regex.Match(i.Id, @"^\d+(.*)$"); return m.Success ? m.Groups[1].Value : i.Id; })
             .FirstOrDefault();
+
+        if (next == null)
+        {
+            Console.Error.WriteLine("No actionable items found in the ready lane.");
+            return;
+        }
+
         Console.WriteLine(JsonSerializer.Serialize(next, JsonOptions));
+    }
+
+    private static bool HasUnresolvedDependencies(string content, List<WorkItem> allItems, HashSet<string> doneSlugs)
+    {
+        var deps = FrontmatterParser.GetListField(content, "dependsOn");
+        if (deps == null || deps.Count == 0)
+        {
+            return false;
+        }
+
+        return deps.Any(dep => !doneSlugs.Contains(dep));
     }
 
     public static void ExecuteNextId(string rootPath)

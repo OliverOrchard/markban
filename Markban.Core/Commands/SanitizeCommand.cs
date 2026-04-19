@@ -7,11 +7,13 @@ public static class SanitizeCommand
     {
         int totalFixed = 0;
         var unresolvedByFile = new List<(string FileName, List<string> Refs)>();
+        var settings = WorkItemStore.LoadSettings(rootPath);
 
         foreach (var item in items)
         {
             var original = File.ReadAllText(item.FullPath);
             var sanitized = SanitizeText(original);
+            sanitized = FixDuplicateH1(sanitized, item, settings.SlugCasing);
             var (result, unresolved) = FixReferences(sanitized, items);
             sanitized = result;
 
@@ -112,5 +114,97 @@ public static class SanitizeCommand
         }
 
         return (result, unresolved);
+    }
+
+    /// <summary>
+    /// Removes any H1 headings except the canonical one in the body (after frontmatter).
+    /// When a WorkItem is provided, prefers the H1 matching "# {id} - {title}".
+    /// Falls back to keeping the first H1 when no canonical match is found.
+    /// </summary>
+    internal static string FixDuplicateH1(string text, WorkItem? item = null, string slugCasing = "kebab")
+    {
+        var (fields, body) = FrontmatterParser.Parse(text);
+        var h1Matches = Regex.Matches(body, @"^# .+$", RegexOptions.Multiline);
+        if (h1Matches.Count <= 1)
+        {
+            return text;
+        }
+
+        var canonicalH1 = FindCanonicalH1(body, item, slugCasing);
+        var firstKept = false;
+        var fixedBody = Regex.Replace(body, @"^# .+$", m =>
+        {
+            var lineText = m.Value.TrimEnd('\r');
+            if (canonicalH1 != null)
+            {
+                if (lineText == canonicalH1 && !firstKept)
+                {
+                    firstKept = true;
+                    return m.Value;
+                }
+
+                return "";
+            }
+
+            if (!firstKept)
+            {
+                firstKept = true;
+                return m.Value;
+            }
+
+            return "";
+        }, RegexOptions.Multiline);
+
+        if (fixedBody == body)
+        {
+            return text;
+        }
+
+        // Collapse any triple+ blank lines left behind by removed headings
+        fixedBody = Regex.Replace(fixedBody, @"(\r?\n){3,}", "\n\n");
+
+        return fields.Count > 0 ? FrontmatterParser.BuildContent(fields, fixedBody.TrimStart('\n', '\r')) : fixedBody;
+    }
+
+    private static string? FindCanonicalH1(string body, WorkItem? item, string slugCasing = "kebab")
+    {
+        if (item == null || string.IsNullOrEmpty(item.Id))
+        {
+            return null;
+        }
+
+        var idEscaped = Regex.Escape(item.Id);
+        var idPattern = new Regex($@"^# {idEscaped}[a-z]?\s*[-–]\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        var anyH1Pattern = new Regex(@"^# (.+)$", RegexOptions.Multiline);
+
+        string? idWithSlugMatch = null;   // # ID - Title where slug(Title) == item.Slug   (best)
+        string? slugTextMatch = null;     // # <heading text> where slug(text) == item.Slug (second best)
+        string? idOnlyMatch = null;       // # ID - Title (any title)                       (third best)
+
+        foreach (Match m in anyH1Pattern.Matches(body))
+        {
+            var headingText = m.Groups[1].Value.TrimEnd('\r');
+            var idMatch = idPattern.Match(m.Value);
+
+            if (idMatch.Success)
+            {
+                var title = idMatch.Groups[1].Value.TrimEnd('\r');
+                if (SlugHelper.Generate(title, slugCasing) == item.Slug)
+                {
+                    idWithSlugMatch ??= m.Value.TrimEnd('\r');
+                }
+                else
+                {
+                    idOnlyMatch ??= m.Value.TrimEnd('\r');
+                }
+            }
+            else if (slugTextMatch == null &&
+                     SlugHelper.Generate(headingText, slugCasing) == item.Slug)
+            {
+                slugTextMatch = m.Value.TrimEnd('\r');
+            }
+        }
+
+        return idWithSlugMatch ?? slugTextMatch ?? idOnlyMatch;
     }
 }

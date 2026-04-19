@@ -3,9 +3,9 @@ public class CommitRoute : CommandRoute
     public override string? SubCommand => "commit";
 
     public override HelpEntry Help => new HelpEntry(
-        "commit <id|slug> --tag <tag> --message \"msg\" [--dry-run]",
-        "Move item to Done, then git add / commit / push",
-        "  <id|slug>          required - item to commit\n" +
+        "commit <id[,id2...]> --tag <tag> --message \"msg\" [--dry-run]",
+        "Move item(s) to Done, then git add / commit / push",
+        "  <id[,id2...]>      required - one or more item IDs/slugs (comma or space separated)\n" +
         $"  --tag <tag>        valid: {string.Join(", ", CommitCommand.ValidTags)}\n" +
         "  --message \"msg\"    commit message\n" +
         "  --dry-run          preview without executing");
@@ -14,9 +14,9 @@ public class CommitRoute : CommandRoute
     {
         var tags = CommitCommand.GetValidTags(rootPath);
         return new HelpEntry(
-            "commit <id|slug> --tag <tag> --message \"msg\" [--dry-run]",
-            "Move item to Done, then git add / commit / push",
-            "  <id|slug>          required - item to commit\n" +
+            "commit <id[,id2...]> --tag <tag> --message \"msg\" [--dry-run]",
+            "Move item(s) to Done, then git add / commit / push",
+            "  <id[,id2...]>      required - one or more item IDs/slugs (comma or space separated)\n" +
             $"  --tag <tag>        valid: {string.Join(", ", tags)}\n" +
             "  --message \"msg\"    commit message\n" +
             "  --dry-run          preview without executing");
@@ -41,9 +41,15 @@ public class CommitRoute : CommandRoute
             return true;
         }
 
-        var identifier = args[1];
+        var (identifiers, argsConsumed) = CollectIdentifiers(args, 1);
+        if (identifiers.Count == 0)
+        {
+            PrintHelp();
+            return true;
+        }
 
-        var unknownFlag = FindUnknownFlag(args, 2, KnownFlags, ValueFlags);
+        var flagStart = 1 + argsConsumed;
+        var unknownFlag = FindUnknownFlag(args, flagStart, KnownFlags, ValueFlags);
         if (unknownFlag != null)
         {
             Console.Error.WriteLine($"Unknown flag '{unknownFlag}'.");
@@ -79,8 +85,27 @@ public class CommitRoute : CommandRoute
 
         bool dryRun = args.Contains("--dry-run");
 
-        CommitCommand.ExecuteAsync(rootPath, identifier, tag, message, dryRun).GetAwaiter().GetResult();
+        CommitCommand.ExecuteAsync(rootPath, identifiers, tag, message, dryRun).GetAwaiter().GetResult();
         return true;
     }
 
+    private static (IReadOnlyList<string> Ids, int ArgsConsumed) CollectIdentifiers(string[] args, int startIndex)
+    {
+        var ids = new List<string>();
+        int argsConsumed = 0;
+        for (int i = startIndex; i < args.Length; i++)
+        {
+            var arg = args[i];
+            if (arg.StartsWith('-'))
+            {
+                break;
+            }
+
+            argsConsumed++;
+            // Support comma-separated and space-separated IDs in a single arg
+            ids.AddRange(arg.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        return (ids, argsConsumed);
+    }
 }

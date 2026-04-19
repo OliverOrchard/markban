@@ -58,6 +58,7 @@ public static class OverviewCommand
     {
         var lanes = WorkItemStore.LoadConfig(rootPath);
         var items = WorkItemStore.LoadAll(rootPath);
+        var settings = WorkItemStore.LoadSettings(rootPath);
 
         var orderedPickable = lanes.Where(l => l.Ordered && l.Pickable).ToList();
         var doneLaneName = lanes.FirstOrDefault(l => l.Type == "done")?.Name;
@@ -84,6 +85,16 @@ public static class OverviewCommand
         sb.AppendLine($"] {pct}% -- {string.Join(", ", summaryParts)}");
         sb.AppendLine();
 
+        if (settings.BlockedEnabled)
+        {
+            var totalBlocked = tracked.Count(i => BlockCommand.IsBlocked(i.Content));
+            if (totalBlocked > 0)
+            {
+                sb.AppendLine($"Blocked: {totalBlocked} item(s) -- run 'markban block --list' for details");
+                sb.AppendLine();
+            }
+        }
+
         foreach (var lane in orderedPickable.Where(l => l.Name != doneLaneName).Reverse())
         {
             var laneItems = tracked.Where(i => i.Status == lane.Name).ToList();
@@ -92,12 +103,20 @@ public static class OverviewCommand
                 continue;
             }
 
-            sb.AppendLine($"{lane.Name} ({laneItems.Count}):");
+            var blockedCount = settings.BlockedEnabled
+                ? laneItems.Count(i => BlockCommand.IsBlocked(i.Content))
+                : 0;
+            var laneHeader = blockedCount > 0
+                ? $"{lane.Name} ({laneItems.Count}, {blockedCount} blocked):"
+                : $"{lane.Name} ({laneItems.Count}):";
+
+            sb.AppendLine(laneHeader);
             foreach (var item in laneItems)
             {
                 var title = ExtractTitle(item);
                 var prefix = string.IsNullOrEmpty(item.Id) ? "  " : $"  {item.Id}. ";
-                sb.AppendLine($"{prefix}{title}");
+                var blockedMark = settings.BlockedEnabled && BlockCommand.IsBlocked(item.Content) ? " [BLOCKED]" : "";
+                sb.AppendLine($"{prefix}{title}{blockedMark}");
             }
 
             sb.AppendLine();

@@ -307,7 +307,7 @@ public class ListAndQueryTests : IDisposable
             var result = await CliRunner.RunAsync(_build.DllPath, emptyWs.Root, "next");
 
             // Assert
-            result.StdOut.Trim().Should().Be("null", because: "no items in Todo means nothing to return");
+            result.StdOut.Trim().Should().BeEmpty(because: "no items in Todo means nothing to return to stdout; the signal is empty output");
         }
         finally
         {

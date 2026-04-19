@@ -44,8 +44,13 @@ public class HealthRoute : CommandRoute
         var includeIdeas = args.Contains("--include-ideas");
         var items = WorkItemStore.LoadAll(rootPath);
         var (broken, numericRefs) = CheckLinksCommand.Execute(rootPath, items, includeIdeas);
-        CheckLinksCommand.PrintResults(broken, numericRefs);
-        if (broken.Count > 0 || numericRefs.Count > 0)
+        var settings = WorkItemStore.LoadSettings(rootPath);
+        var brokenDeps = settings.DependsOnEnabled
+            ? CheckLinksCommand.ValidateDependsOn(items)
+            : null;
+
+        CheckLinksCommand.PrintResults(broken, numericRefs, brokenDeps);
+        if (broken.Count > 0 || numericRefs.Count > 0 || (brokenDeps != null && brokenDeps.Count > 0))
         {
             Environment.ExitCode = 1;
         }
@@ -65,11 +70,16 @@ public class HealthRoute : CommandRoute
     private static void RunAll(string rootPath)
     {
         var items = WorkItemStore.LoadAll(rootPath);
+        var settings = WorkItemStore.LoadSettings(rootPath);
         var anyFailed = false;
 
         var (broken, numericRefs) = CheckLinksCommand.Execute(rootPath, items, false);
-        CheckLinksCommand.PrintResults(broken, numericRefs);
-        if (broken.Count > 0 || numericRefs.Count > 0)
+        var brokenDeps = settings.DependsOnEnabled
+            ? CheckLinksCommand.ValidateDependsOn(items)
+            : null;
+
+        CheckLinksCommand.PrintResults(broken, numericRefs, brokenDeps);
+        if (broken.Count > 0 || numericRefs.Count > 0 || (brokenDeps != null && brokenDeps.Count > 0))
         {
             anyFailed = true;
         }

@@ -81,9 +81,13 @@ public static class WorkItemStore
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(configPath));
             var maxLen = 72;
-            IReadOnlyList<string>? tags = null;
+            IReadOnlyList<string>? commitTags = null;
             var headingEnabled = true;
             var slugCasing = "kebab";
+            var blockedEnabled = true;
+            var tagsEnabled = true;
+            var dependsOnEnabled = true;
+            IReadOnlyList<CustomFrontmatterField>? customFrontmatter = null;
 
             if (doc.RootElement.TryGetProperty("commit", out var commitEl))
             {
@@ -94,7 +98,7 @@ public static class WorkItemStore
 
                 if (commitEl.TryGetProperty("tags", out var tagsEl))
                 {
-                    tags = tagsEl.EnumerateArray()
+                    commitTags = tagsEl.EnumerateArray()
                         .Select(e => e.GetString())
                         .OfType<string>()
                         .ToList();
@@ -113,12 +117,96 @@ public static class WorkItemStore
                 slugCasing = casingEl.GetString() ?? "kebab";
             }
 
-            return new BoardSettings(maxLen, tags, headingEnabled, slugCasing);
+            if (doc.RootElement.TryGetProperty("blocked", out var blockedEl)
+                && blockedEl.TryGetProperty("enabled", out var blockedEnabledEl))
+            {
+                blockedEnabled = blockedEnabledEl.GetBoolean();
+            }
+
+            if (doc.RootElement.TryGetProperty("tags", out var tagsFeatureEl)
+                && tagsFeatureEl.TryGetProperty("enabled", out var tagsEnabledEl))
+            {
+                tagsEnabled = tagsEnabledEl.GetBoolean();
+            }
+
+            if (doc.RootElement.TryGetProperty("dependsOn", out var depsEl)
+                && depsEl.TryGetProperty("enabled", out var depsEnabledEl))
+            {
+                dependsOnEnabled = depsEnabledEl.GetBoolean();
+            }
+
+            if (doc.RootElement.TryGetProperty("customFrontmatter", out var customEl)
+                && customEl.ValueKind == JsonValueKind.Array)
+            {
+                customFrontmatter = customEl.EnumerateArray()
+                    .Select(ParseCustomField)
+                    .OfType<CustomFrontmatterField>()
+                    .ToList();
+            }
+
+            FeatureBranchSettings? featureBranches = null;
+            if (doc.RootElement.TryGetProperty("git", out var gitEl)
+                && gitEl.TryGetProperty("featureBranches", out var fbEl)
+                && fbEl.ValueKind == JsonValueKind.Object)
+            {
+                featureBranches = ParseFeatureBranchSettings(fbEl);
+            }
+
+            return new BoardSettings(maxLen, commitTags, headingEnabled, slugCasing,
+                blockedEnabled, tagsEnabled, dependsOnEnabled, customFrontmatter, featureBranches);
         }
         catch (JsonException)
         {
             return new BoardSettings();
         }
+    }
+
+    private static CustomFrontmatterField? ParseCustomField(JsonElement el)
+    {
+        if (el.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (!el.TryGetProperty("name", out var nameEl) || nameEl.ValueKind != JsonValueKind.String)
+        {
+            return null;
+        }
+
+        var name = nameEl.GetString();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        string? defaultValue = null;
+        var hasDefault = false;
+        if (el.TryGetProperty("default", out var defaultEl))
+        {
+            hasDefault = true;
+            defaultValue = defaultEl.ValueKind switch
+            {
+                JsonValueKind.String => defaultEl.GetString(),
+                JsonValueKind.True => "true",
+                JsonValueKind.False => "false",
+                JsonValueKind.Number => defaultEl.ToString(),
+                _ => null  // JsonValueKind.Null → hasDefault=true, Default=null
+            };
+        }
+
+        return new CustomFrontmatterField(name!, defaultValue, hasDefault);
+    }
+
+    private static FeatureBranchSettings ParseFeatureBranchSettings(JsonElement el)
+    {
+        var enabled = el.TryGetProperty("enabled", out var enabledEl) && enabledEl.GetBoolean();
+        var mainBranch = el.TryGetProperty("mainBranch", out var mbEl) ? mbEl.GetString() ?? "main" : "main";
+        var strategy = el.TryGetProperty("commitStrategy", out var csEl) ? csEl.GetString() ?? "single" : "single";
+        var pullOnStart = !el.TryGetProperty("pullOnStart", out var posEl) || posEl.GetBoolean();
+        var checkoutOnDone = !el.TryGetProperty("checkoutOnDone", out var codEl) || codEl.GetBoolean();
+        var prCmd = el.TryGetProperty("prCommand", out var prEl) ? prEl.GetString() : null;
+        var prefix = el.TryGetProperty("branchPrefix", out var bpEl) ? bpEl.GetString() ?? "feature/" : "feature/";
+        return new FeatureBranchSettings(enabled, mainBranch, strategy, pullOnStart, checkoutOnDone, prCmd, prefix);
     }
 
     public static IReadOnlyList<BoardEntry> LoadBoards(string configDir)
@@ -370,13 +458,17 @@ public static class WorkItemStore
             var number = int.Parse(match.Groups[1].Value);
             var letter = match.Groups[2].Value;
 
+            var content = File.ReadAllText(file);
             folderItems.Add((new WorkItem(
                 Id: match.Groups[1].Value + letter,
                 Slug: match.Groups[3].Value,
                 Status: laneName,
-                Content: File.ReadAllText(file),
+                Content: content,
                 FileName: fileName,
-                FullPath: file
+                FullPath: file,
+                Blocked: FrontmatterParser.GetField(content, "blocked"),
+                Tags: FrontmatterParser.GetListField(content, "tags"),
+                DependsOn: FrontmatterParser.GetListField(content, "dependsOn")
             ), number, letter));
         }
 
@@ -397,13 +489,17 @@ public static class WorkItemStore
                 continue;
             }
 
+            var content = File.ReadAllText(file);
             yield return new WorkItem(
                 Id: "",
                 Slug: Path.GetFileNameWithoutExtension(fileName),
                 Status: laneName,
-                Content: File.ReadAllText(file),
+                Content: content,
                 FileName: fileName,
-                FullPath: file
+                FullPath: file,
+                Blocked: FrontmatterParser.GetField(content, "blocked"),
+                Tags: FrontmatterParser.GetListField(content, "tags"),
+                DependsOn: FrontmatterParser.GetListField(content, "dependsOn")
             );
         }
     }

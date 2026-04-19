@@ -3,8 +3,29 @@ let currentDetailItem = null;
 let lanes = [];
 let hiddenLanes = new Set();
 let currentBoardKey = null;
+let activeTagFilter = null;
 
 const BOARD_STORAGE_KEY = 'markban-board';
+
+function esc(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function buildCardBadges(item) {
+    let html = '';
+    if (item.blocked) {
+        html += `<span class="badge badge-blocked" title="${esc(item.blocked)}">⊘ blocked</span>`;
+    }
+
+    if (item.tags && item.tags.length > 0) {
+        html += item.tags.map(t => `<span class="badge badge-tag" data-tag="${esc(t)}" onclick="filterByTag('${esc(t)}')">${esc(t)}</span>`).join('');
+    }
+
+    return html ? `<div class="card-badges">${html}</div>` : '';
+}
 
 async function getJson(url, fallbackMessage) {
     const response = await fetch(url);
@@ -73,7 +94,7 @@ function buildBoard() {
         const col = document.createElement('div');
         col.className = 'column';
         col.setAttribute('data-lane', lane);
-        col.innerHTML = `<h2>${lane} <span class="col-count"></span></h2><div class="cards" id="${colId}"></div>`;
+    col.innerHTML = `<h2>${lane} <span class="col-count"></span><span class="col-blocked-count"></span></h2><div class="cards" id="${colId}"></div>`;
         kanban.appendChild(col);
         const option = document.createElement('option');
         option.value = lane;
@@ -140,10 +161,17 @@ function toggleLane(lane, button) {
 
 function updateColumnCounts() {
     document.querySelectorAll('.column').forEach(column => {
+        const lane = column.getAttribute('data-lane');
         const count = column.querySelectorAll('.card:not(.hidden)').length;
         const span = column.querySelector('.col-count');
         if (span) {
             span.textContent = `(${count})`;
+        }
+
+        const blockedCount = allWorkItems.filter(i => i.status === lane && i.blocked).length;
+        const blockedSpan = column.querySelector('.col-blocked-count');
+        if (blockedSpan) {
+            blockedSpan.textContent = blockedCount > 0 ? ` · ${blockedCount} blocked` : '';
         }
     });
 }
@@ -170,7 +198,9 @@ async function loadItems() {
             card.setAttribute('data-slug', item.slug);
             card.setAttribute('data-content', item.content.toLowerCase());
             card.setAttribute('data-status', item.status);
-            card.innerHTML = `<span class="card-id">${item.id}</span>${item.slug}`;
+            card.setAttribute('data-tags', item.tags ? item.tags.join(',') : '');
+            const cardBadges = buildCardBadges(item);
+            card.innerHTML = `<span class="card-id">${esc(item.id)}</span>${esc(item.slug)}${cardBadges}`;
             card.draggable = true;
             card.addEventListener('dragstart', onCardDragStart);
             card.addEventListener('dragend', onCardDragEnd);
@@ -235,6 +265,40 @@ function filterCards(term) {
         }
 
         card.classList.add('hidden');
+    });
+
+    updateStats();
+    updateColumnCounts();
+}
+
+function filterByTag(tag) {
+    if (activeTagFilter === tag) {
+        activeTagFilter = null;
+    } else {
+        activeTagFilter = tag;
+    }
+
+    document.querySelectorAll('.card').forEach(card => {
+        if (!activeTagFilter) {
+            card.classList.remove('hidden');
+            return;
+        }
+
+        const tags = card.getAttribute('data-tags') || '';
+        const cardTags = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        if (cardTags.includes(activeTagFilter)) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    document.querySelectorAll('.badge-tag').forEach(badge => {
+        if (badge.getAttribute('data-tag') === activeTagFilter) {
+            badge.classList.add('active');
+        } else {
+            badge.classList.remove('active');
+        }
     });
 
     updateStats();
