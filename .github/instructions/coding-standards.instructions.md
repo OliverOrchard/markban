@@ -1,4 +1,5 @@
 ---
+description: C# architecture, formatting, and CLI design standards for markban production code.
 applyTo: "Markban.Cli/**/*.cs,Markban.Core/**/*.cs"
 ---
 

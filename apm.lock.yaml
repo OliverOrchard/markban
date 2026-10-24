@@ -1,0 +1,169 @@
+lockfile_version: '1'
+apm_version: 0.30.0
+dependencies:
+- repo_url: herdrdev/herdr
+  name: herdr
+  host: github.com
+  resolved_commit: 2ecf19a92fc3a7fff75b6ce3655ef04f4625ec01
+  resolved_ref: v0.9.5
+  version: unknown
+  virtual_path: skills/herdr
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/herdr
+  - .agents/skills/herdr/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/herdr/SKILL.md: sha256:fbd9d502767f7dff29c211505a0bd9ba34e980ed4cc456247e2adc1642883984
+  content_hash: sha256:72177e911f55467de8737174072ec6bb08e30bbf62bceabcb69678e944398b18
+deployments:
+- kind: project-relative
+  target: antigravity
+  value: .agents/skills/herdr
+  runtime: null
+  scope: project
+  owners:
+  - herdrdev/herdr/skills/herdr
+  active_owner: herdrdev/herdr/skills/herdr
+  content_hash: null
+- kind: project-relative
+  target: antigravity
+  value: .agents/skills/herdr/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - herdrdev/herdr/skills/herdr
+  active_owner: herdrdev/herdr/skills/herdr
+  content_hash: sha256:fbd9d502767f7dff29c211505a0bd9ba34e980ed4cc456247e2adc1642883984
+- kind: project-relative
+  target: copilot
+  value: .github/agents/developer.agent.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:6f7d1e5b8f72d90a6ff1744fb04c938bbba57c726643cc6e5da50bd106f444b9
+- kind: project-relative
+  target: copilot
+  value: .github/agents/orchestrator.agent.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:27be48ec9d7e9ed95f161463881ba44de120bbd329d329ec9fa2673a4e5e4e64
+- kind: project-relative
+  target: copilot
+  value: .github/instructions/coding-standards.instructions.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a81403912fe1471b9260a30124feed72fea6eca4031d8908dfecc26882d2d8e8
+- kind: project-relative
+  target: copilot
+  value: .github/instructions/project.instructions.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:94df0263d18719c7ea56b7459e45686075c58e0703fafdf1e1a22076111d1041
+- kind: project-relative
+  target: copilot
+  value: .github/instructions/testing-standards.instructions.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:307dd2b7a7d440e6fa0180ede450e8b81725f219b4e9050fbd315005a8231a7d
+- kind: project-relative
+  target: legacy
+  value: .agents/rules/coding-standards.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:26bc8737e61e9601248e1a0fe80029fe635d77b395b53d6a8f487feb4a8f5e58
+- kind: project-relative
+  target: legacy
+  value: .agents/rules/project.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:84f51f57305375886a926c4c8d01fe6c0274d07df5aa77dee75a527166947fac
+- kind: project-relative
+  target: legacy
+  value: .agents/rules/testing-standards.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:50aba644c61e31fefcad5315572de99bc41d234d132d7983fe39840584e13218
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/markban-developer
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/markban-developer/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:c129d063d35fef2db0ddd0b9f5121c9e7a94728f551bce6a8565aa0e16ed01e3
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/markban-orchestrator
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/markban-orchestrator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:ab0547a2e3ae5cb3d6414ae32f9c353672a25d10705a018bb74597e5565b35df
+local_deployed_files:
+- .agents/rules/coding-standards.md
+- .agents/rules/project.md
+- .agents/rules/testing-standards.md
+- .agents/skills/markban-developer
+- .agents/skills/markban-developer/SKILL.md
+- .agents/skills/markban-orchestrator
+- .agents/skills/markban-orchestrator/SKILL.md
+- .github/agents/developer.agent.md
+- .github/agents/orchestrator.agent.md
+- .github/instructions/coding-standards.instructions.md
+- .github/instructions/project.instructions.md
+- .github/instructions/testing-standards.instructions.md
+local_deployed_file_hashes:
+  .agents/rules/coding-standards.md: sha256:26bc8737e61e9601248e1a0fe80029fe635d77b395b53d6a8f487feb4a8f5e58
+  .agents/rules/project.md: sha256:84f51f57305375886a926c4c8d01fe6c0274d07df5aa77dee75a527166947fac
+  .agents/rules/testing-standards.md: sha256:50aba644c61e31fefcad5315572de99bc41d234d132d7983fe39840584e13218
+  .agents/skills/markban-developer/SKILL.md: sha256:c129d063d35fef2db0ddd0b9f5121c9e7a94728f551bce6a8565aa0e16ed01e3
+  .agents/skills/markban-orchestrator/SKILL.md: sha256:ab0547a2e3ae5cb3d6414ae32f9c353672a25d10705a018bb74597e5565b35df
+  .github/agents/developer.agent.md: sha256:6f7d1e5b8f72d90a6ff1744fb04c938bbba57c726643cc6e5da50bd106f444b9
+  .github/agents/orchestrator.agent.md: sha256:27be48ec9d7e9ed95f161463881ba44de120bbd329d329ec9fa2673a4e5e4e64
+  .github/instructions/coding-standards.instructions.md: sha256:a81403912fe1471b9260a30124feed72fea6eca4031d8908dfecc26882d2d8e8
+  .github/instructions/project.instructions.md: sha256:94df0263d18719c7ea56b7459e45686075c58e0703fafdf1e1a22076111d1041
+  .github/instructions/testing-standards.instructions.md: sha256:307dd2b7a7d440e6fa0180ede450e8b81725f219b4e9050fbd315005a8231a7d

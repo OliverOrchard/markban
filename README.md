@@ -156,6 +156,21 @@ When an agent is operating on a large board, prefer this flow:
 
 That keeps the agent in compact JSON until it needs the full markdown body.
 
+### Repository agent harness
+
+This repo's development instructions and skills are managed by
+[APM](https://microsoft.github.io/apm/) from `apm.yml` and `.apm/`.
+Run `apm install --frozen` and `apm compile` to reproduce the Copilot and
+Antigravity harness. Edit the `.apm/` sources, not the deployed copies.
+
+Copilot provides `developer` and `orchestrator` custom agents. Both Copilot and
+Antigravity share the `markban-developer` and `markban-orchestrator` skills.
+The orchestrator protocol uses one canonical board writer and one worktree per
+worker, preserves human Testing approval, and supports optional Herdr terminal
+coordination. It is not an unattended scheduler or an atomic task-claim service.
+See the [harness guide](.apm/README.md) for entry points, setup, isolation rules,
+and orchestration options.
+
 ## Custom item template
 
 By default, new items are created with a `## Description` and `## Acceptance Criteria` section. To use your own template, add a `.template.md` file inside your `work-items/` directory:

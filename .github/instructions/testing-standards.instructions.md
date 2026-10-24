@@ -1,4 +1,5 @@
 ---
+description: xUnit, AwesomeAssertions, and Playwright conventions for markban tests.
 applyTo: "Markban.UnitTests/**/*.cs,Markban.IntegrationTests/**/*.cs"
 ---
 

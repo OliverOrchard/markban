@@ -1,0 +1,16 @@
+name: markban-harness
+version: "1.0.0"
+description: Shared markban development and orchestration harness for Copilot and Antigravity.
+license: MIT
+targets:
+  - copilot
+  - antigravity
+includes:
+  - .apm/instructions/
+  - .apm/agents/
+  - .apm/skills/
+dependencies:
+  apm:
+    - herdrdev/herdr/skills/herdr#v0.9.5
+compilation:
+  strategy: single-file
