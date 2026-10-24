@@ -4,51 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cycle Time — markban</title>
+    <script src="../theme.js"></script>
     <link rel="stylesheet" href="../styles.css">
     <style>
-        :root { --border: rgba(255,255,255,0.1); --col-bg: rgba(255,255,255,0.04); }
         body { padding: 0 24px 40px; overflow: auto; height: auto; }
-        .report-header { display: flex; align-items: center; gap: 16px; padding: 16px 0; }
+        .report-header { display: flex; align-items: center; gap: 16px; padding: 16px 0; flex-wrap: wrap; }
         .report-header h1 { font-size: 1.4rem; color: var(--accent); margin: 0; }
-        .report-header a { font-size: 0.85rem; color: #888; text-decoration: none; }
+        .report-header a { font-size: 0.85rem; color: var(--muted); text-decoration: none; }
         .report-header a:hover { color: var(--accent); }
         .filters { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-        .filters label { font-size: 0.85rem; color: #888; }
+        .filters label { font-size: 0.85rem; color: var(--muted); }
         .filters input[type=date] {
-            background: #333; border: 1px solid #555; color: var(--text);
+            background: var(--input-bg); border: 1px solid var(--control-border); color: var(--text);
             padding: 5px 10px; border-radius: 6px; font-size: 0.85rem; outline: none;
         }
         .filters input[type=date]:focus { border-color: var(--accent); }
         .filters button {
-            background: transparent; border: 1px solid #555; color: #aaa;
+            background: transparent; border: 1px solid var(--control-border); color: var(--muted);
             padding: 5px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
         }
-        .filters button:hover { border-color: var(--accent); color: white; }
+        .filters button:hover { border-color: var(--accent); color: var(--text); }
         #chart-container {
-            background: #1e1e1e; border: 1px solid var(--border);
+            background: var(--card-bg); border: 1px solid var(--border);
             border-radius: 8px; padding: 16px; margin-bottom: 24px;
         }
         #scatter-canvas { display: block; width: 100%; height: 380px; }
         .legend { display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #aaa; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
         .legend-line { width: 20px; height: 2px; }
         table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
-        th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); color: #aaa; font-weight: 600; }
+        th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
         td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
-        tr:hover td { background: var(--col-bg); }
+        tr:hover td { background: var(--hover-bg); }
         .days { text-align: right; font-variant-numeric: tabular-nums; }
         .avg-row td { border-top: 2px solid var(--border); font-weight: 600; color: var(--accent); }
-        .no-data { color: #888; padding: 24px 0; }
-        #loading { color: #888; padding: 24px 0; }
-        #error { color: #e05c5c; padding: 16px 0; }
-        #summary { color: #888; font-size: 0.85rem; margin-bottom: 8px; }
+        .no-data { color: var(--muted); padding: 24px 0; }
+        #loading { color: var(--muted); padding: 24px 0; }
+        #error { color: var(--error); padding: 16px 0; }
+        #summary { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
     </style>
 </head>
 <body>
     <div class="report-header">
         <h1>&#x23F1; Cycle Time Report</h1>
         <a href="/">&#x2190; Back to board</a>
+        <label class="theme-control" for="theme-select">Theme
+            <select id="theme-select" class="theme-select" aria-label="Theme">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </select>
+        </label>
+        <span id="theme-feedback" role="status"></span>
     </div>
 
     <div class="filters">
@@ -66,19 +74,19 @@
             <canvas id="scatter-canvas"></canvas>
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-dot" style="background:#ff00ff"></div>
+                    <div class="legend-dot" style="background:var(--accent)"></div>
                     <span>Completed item</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-line" style="background:#4a9eff"></div>
+                    <div class="legend-line" style="background:var(--progress)"></div>
                     <span id="legend-p50">p50</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-line" style="background:#f0a030"></div>
+                    <div class="legend-line" style="background:var(--testing)"></div>
                     <span id="legend-p85">p85</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-line" style="background:#e05c5c"></div>
+                    <div class="legend-line" style="background:var(--error)"></div>
                     <span id="legend-p95">p95</span>
                 </div>
             </div>
@@ -124,6 +132,8 @@
         }
 
         function drawChart(entries) {
+            const styles = getComputedStyle(document.documentElement);
+            const color = name => styles.getPropertyValue(name).trim();
             const canvas = document.getElementById('scatter-canvas');
             const dpr = window.devicePixelRatio || 1;
             const cssW = canvas.offsetWidth;
@@ -135,7 +145,7 @@
             const W = cssW, H = cssH;
 
             ctx.clearRect(0, 0, W, H);
-            ctx.fillStyle = '#1e1e1e';
+            ctx.fillStyle = color('--card-bg');
             ctx.fillRect(0, 0, W, H);
 
             const withDays = entries.filter(e => e.daysInProgress != null && e.completedDate);
@@ -156,19 +166,19 @@
             const scaleY = d => margin.top + cH - (d / yMax) * cH;
 
             // Grid + axes
-            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+            ctx.strokeStyle = color('--border');
             ctx.lineWidth = 1;
             const yTicks = 5;
             for (let i = 0; i <= yTicks; i++) {
                 const v = (yMax / yTicks) * i;
                 const y = scaleY(v);
                 ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + cW, y); ctx.stroke();
-                ctx.fillStyle = '#666'; ctx.font = '11px Segoe UI, sans-serif'; ctx.textAlign = 'right';
+                ctx.fillStyle = color('--muted'); ctx.font = '11px Segoe UI, sans-serif'; ctx.textAlign = 'right';
                 ctx.fillText(Math.round(v), margin.left - 6, y + 4);
             }
 
             // X axis date labels
-            ctx.textAlign = 'center'; ctx.fillStyle = '#666';
+            ctx.textAlign = 'center'; ctx.fillStyle = color('--muted');
             const numXLabels = Math.min(6, withDays.length);
             for (let i = 0; i <= numXLabels; i++) {
                 const t = minDate + (dateRange / numXLabels) * i;
@@ -178,11 +188,11 @@
 
             // Y axis label
             ctx.save(); ctx.translate(14, margin.top + cH / 2); ctx.rotate(-Math.PI / 2);
-            ctx.textAlign = 'center'; ctx.fillStyle = '#666'; ctx.font = '11px Segoe UI, sans-serif';
+            ctx.textAlign = 'center'; ctx.fillStyle = color('--muted'); ctx.font = '11px Segoe UI, sans-serif';
             ctx.fillText('Days', 0, 0); ctx.restore();
 
             // Axes
-            ctx.strokeStyle = '#444'; ctx.lineWidth = 1.5;
+            ctx.strokeStyle = color('--control-border'); ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(margin.left, margin.top); ctx.lineTo(margin.left, margin.top + cH);
             ctx.lineTo(margin.left + cW, margin.top + cH); ctx.stroke();
@@ -193,9 +203,9 @@
             const p85 = percentile(sorted, 85);
             const p95 = percentile(sorted, 95);
             const pLines = [
-                { v: p50, color: '#4a9eff', label: `p50: ${p50.toFixed(1)}d` },
-                { v: p85, color: '#f0a030', label: `p85: ${p85.toFixed(1)}d` },
-                { v: p95, color: '#e05c5c', label: `p95: ${p95.toFixed(1)}d` }
+                { v: p50, color: color('--progress'), label: `p50: ${p50.toFixed(1)}d` },
+                { v: p85, color: color('--testing'), label: `p85: ${p85.toFixed(1)}d` },
+                { v: p95, color: color('--error'), label: `p95: ${p95.toFixed(1)}d` }
             ];
             ctx.setLineDash([6, 4]);
             for (const pl of pLines) {
@@ -213,7 +223,7 @@
             document.getElementById('legend-p95').textContent = `p95: ${p95.toFixed(1)}d`;
 
             // Data points
-            ctx.fillStyle = 'rgba(255, 0, 255, 0.8)';
+            ctx.fillStyle = color('--accent');
             for (const entry of withDays) {
                 const x = scaleX(new Date(entry.completedDate).getTime());
                 const y = scaleY(entry.daysInProgress);
@@ -308,6 +318,11 @@
         }
 
         window.addEventListener('resize', () => { if (allEntries.length > 0) drawChart(getFilteredEntries()); });
+        window.addEventListener('themechange', () => {
+            if (document.getElementById('report').style.display !== 'none') {
+                drawChart(getFilteredEntries());
+            }
+        });
         load();
     </script>
 </body>

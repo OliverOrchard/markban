@@ -130,6 +130,16 @@ markban help
 
 In multi-board mode, the web UI exposes a board switcher so you can move between configured boards without leaving the browser.
 
+Use the **Theme** control in the header to choose **Light**, **Dark**, or **System**.
+System is the default and follows your device's appearance, including changes while
+the page is open. Your choice is saved in this browser for this local server.
+The dark theme pairs charcoal surfaces with restrained honey-bronze accents;
+lane filters, card IDs, and tags stay neutral so primary actions stand out.
+The light theme uses teal accents. Code highlighting,
+Mermaid diagrams, and cycle-time reports follow the selected theme.
+Scrollbars use slim, rounded neutral styling in both themes; system high-contrast
+mode keeps native scrollbars.
+
 ## Using with AI agents
 
 markban is deliberately designed to work well with coding agents.
@@ -263,12 +273,6 @@ Array order drives the `progress` command (advance an item one lane forward).
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | boolean | `true` | Run `git add / commit / push` on `markban commit`. Set to `false` to manage git separately. |
-
-**Naming conventions**
-
-- All property names are **camelCase**.
-- No `is` prefix on booleans (`pickable`, not `isPickable`).
-- Enum string values are **lowercase** (`"ready"`, `"done"`).
 
 ## Planned
 

@@ -7,6 +7,75 @@ let activeTagFilter = null;
 
 const BOARD_STORAGE_KEY = 'markban-board';
 
+// ── Library initialisation ────────────────────────────────────────────────────
+
+mermaid.initialize({ startOnLoad: false, theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'default' });
+let mermaidRenderQueue = Promise.resolve();
+
+window.addEventListener('themechange', () => {
+    const content = document.getElementById('detail-content');
+    renderMermaidBlocks(content).catch(err => console.error('Diagram theme update failed:', err));
+});
+
+marked.use({
+    gfm: true,
+    renderer: buildMarkedRenderer(),
+});
+
+function buildMarkedRenderer() {
+    return {
+        code({ text, lang }) {
+            if (lang === 'mermaid') {
+                return `<div class="mermaid">${esc(text)}</div>`;
+            }
+
+            const language = lang && hljs.getLanguage(lang) ? lang : null;
+            const highlighted = language
+                ? hljs.highlight(text, { language }).value
+                : esc(text);
+            const langClass = language ? ` class="hljs language-${language}"` : ' class="hljs"';
+            return `<pre><code${langClass}>${highlighted}</code></pre>`;
+        },
+    };
+}
+
+function renderMermaidBlocks(container) {
+    const blocks = Array.from(container.querySelectorAll('div.mermaid'));
+    if (blocks.length === 0) {
+        return Promise.resolve();
+    }
+
+    const render = mermaidRenderQueue.then(() => renderDiagrams(blocks));
+    mermaidRenderQueue = render.catch(err => console.error('Diagram rendering failed:', err));
+    return render;
+}
+
+async function renderDiagrams(blocks) {
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'default',
+    });
+    for (const block of blocks) {
+        if (!block.isConnected) {
+            continue;
+        }
+
+        const definition = block.dataset.definition ?? block.textContent ?? '';
+        block.dataset.definition = definition;
+        const id = 'mermaid-' + Math.random().toString(36).slice(2);
+        const renderHost = document.createElement('div');
+        block.replaceChildren(renderHost);
+        try {
+            const { svg } = await mermaid.render(id, definition, renderHost);
+            block.innerHTML = svg;
+        } catch (err) {
+            block.innerHTML = `<div class="mermaid-error">Diagram error: ${esc(String(err?.message ?? err))}</div>`;
+        }
+    }
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
 function esc(str) {
     return String(str ?? '')
         .replace(/&/g, '&amp;')
@@ -127,6 +196,7 @@ function buildToolbar() {
     lanes.forEach(lane => {
         const button = document.createElement('button');
         button.className = 'filter-btn active';
+        button.setAttribute('aria-pressed', 'true');
         button.setAttribute('data-lane', lane);
         const count = allWorkItems.filter(item => item.status === lane).length;
         button.innerHTML = `${lane}<span class="count">(${count})</span>`;
@@ -150,12 +220,14 @@ function toggleLane(lane, button) {
     if (hiddenLanes.has(lane)) {
         hiddenLanes.delete(lane);
         button.classList.add('active');
+        button.setAttribute('aria-pressed', 'true');
         column.style.display = '';
         return;
     }
 
     hiddenLanes.add(lane);
     button.classList.remove('active');
+    button.setAttribute('aria-pressed', 'false');
     column.style.display = 'none';
 }
 
@@ -230,6 +302,7 @@ async function loadItems() {
             const button = document.querySelector(`.filter-btn[data-lane="${lane}"]`);
             if (button) {
                 button.classList.remove('active');
+                button.setAttribute('aria-pressed', 'false');
             }
         });
 
@@ -311,10 +384,11 @@ function updateStats() {
     document.getElementById('stats').innerText = `Showing ${visible} of ${total} items`;
 }
 
-function showDetail(item, updateHash = true) {
+async function showDetail(item, updateHash = true) {
     currentDetailItem = item;
     const pane = document.getElementById('detail-pane');
     const content = document.getElementById('detail-content');
+    const editor = document.getElementById('detail-editor');
     const statusEl = document.getElementById('detail-status');
     const moveTarget = document.getElementById('move-target');
     const moveBtn = document.getElementById('move-btn');
@@ -324,6 +398,9 @@ function showDetail(item, updateHash = true) {
     moveTarget.value = '';
     moveBtn.disabled = true;
     feedback.textContent = '';
+
+    content.style.display = '';
+    editor.style.display = 'none';
 
     Array.from(moveTarget.options).forEach(option => {
         option.disabled = option.value === item.status;
@@ -352,6 +429,7 @@ function showDetail(item, updateHash = true) {
         content.innerHTML = html;
         pane.classList.add('open');
         pane.scrollTop = 0;
+        await renderMermaidBlocks(content);
     } catch (err) {
         console.error('Markdown parsing or processing failed:', err);
         content.innerText = item.content;
@@ -365,6 +443,83 @@ function closeDetail(updateHash = true) {
     if (updateHash) {
         window.location.hash = '';
     }
+}
+
+function startEdit() {
+    if (!currentDetailItem) {
+        return;
+    }
+
+    document.getElementById('detail-content').style.display = 'none';
+    const editor = document.getElementById('detail-editor');
+    document.getElementById('editor-textarea').value = currentDetailItem.content;
+    document.getElementById('save-feedback').textContent = '';
+    editor.style.display = '';
+    document.getElementById('editor-textarea').focus();
+}
+
+function cancelEdit() {
+    document.getElementById('detail-editor').style.display = 'none';
+    document.getElementById('detail-content').style.display = '';
+}
+
+async function saveEdit() {
+    if (!currentDetailItem) {
+        return;
+    }
+
+    const newContent = document.getElementById('editor-textarea').value;
+    const feedback = document.getElementById('save-feedback');
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.disabled = true;
+    feedback.className = '';
+    feedback.textContent = 'Saving\u2026';
+
+    const itemUrl = currentBoardKey
+        ? `/api/items/${encodeURIComponent(currentDetailItem.id)}?board=${encodeURIComponent(currentBoardKey)}`
+        : `/api/items/${encodeURIComponent(currentDetailItem.id)}`;
+
+    try {
+        const response = await fetch(itemUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: newContent }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            feedback.className = 'move-err';
+            feedback.textContent = data.error || 'Save failed.';
+            saveBtn.disabled = false;
+            return;
+        }
+
+        currentDetailItem = { ...currentDetailItem, content: newContent };
+        cancelEdit();
+        feedback.className = 'move-msg';
+        feedback.textContent = data.message;
+        await refreshDetailContent(newContent);
+    } catch (err) {
+        feedback.className = 'move-err';
+        feedback.textContent = 'Network error.';
+        saveBtn.disabled = false;
+    } finally {
+        saveBtn.disabled = false;
+    }
+}
+
+async function refreshDetailContent(rawMarkdown) {
+    const content = document.getElementById('detail-content');
+    let html = marked.parse(rawMarkdown);
+    html = html.replace(/\[([a-z0-9-]+)\]/g, (match, slug) => {
+        const target = allWorkItems.find(workItem => workItem.slug === slug);
+        if (target) {
+            return `<a href="#${slug}" style="color: var(--accent); text-decoration: underline; font-weight: bold;">[${slug}]</a>`;
+        }
+
+        return match;
+    });
+    content.innerHTML = html;
+    await renderMermaidBlocks(content);
 }
 
 async function moveItem() {

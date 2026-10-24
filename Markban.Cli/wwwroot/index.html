@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>markban</title>
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,13 +13,21 @@
         <div class="search-container">
             <input type="text" id="search-box" aria-label="Search work items" placeholder="Search by ID, slug, or content..." oninput="filterCards(this.value)">
         </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="header-actions">
             <div id="board-switcher-container" style="display: none;">
                 <select id="board-select" class="board-select" aria-label="Board" onchange="onBoardChange(this.value)">
                 </select>
             </div>
-            <a href="/reports/cycle-time" style="font-size: 0.8rem; color: #888; text-decoration: none;" title="Cycle Time Report">⏱ Reports</a>
-            <div id="stats" style="font-size: 0.8rem; color: #888;"></div>
+            <label class="theme-control" for="theme-select">Theme
+                <select id="theme-select" class="theme-select" aria-label="Theme">
+                    <option value="system">System</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </label>
+            <span id="theme-feedback" role="status"></span>
+            <a class="reports-link" href="/reports/cycle-time" title="Cycle Time Report">⏱ Reports</a>
+            <div id="stats"></div>
         </div>
     </header>
     <div class="toolbar" id="toolbar"></div>
@@ -34,12 +43,32 @@
                     <button class="move-btn" id="move-btn" onclick="moveItem()" disabled>Move</button>
                     <span id="move-feedback"></span>
                 </div>
-                <button class="close-btn" onclick="closeDetail()">Esc to Close</button>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <select class="theme-select" aria-label="Detail theme">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                    <button class="edit-btn" id="edit-btn" onclick="startEdit()">Edit</button>
+                    <button class="close-btn" onclick="closeDetail()">Esc to Close</button>
+                </div>
             </div>
             <div id="detail-content"></div>
+            <div id="detail-editor" style="display:none">
+                <textarea id="editor-textarea" aria-label="Markdown editor"></textarea>
+                <div class="editor-actions">
+                    <button class="save-btn" id="save-btn" onclick="saveEdit()">Save</button>
+                    <button class="cancel-btn" id="cancel-btn" onclick="cancelEdit()">Cancel</button>
+                    <span id="save-feedback"></span>
+                </div>
+            </div>
         </div>
     </div>
-    <script async src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- CDN libraries: marked (markdown), highlight.js (syntax highlighting), mermaid (diagrams) -->
+    <!-- These are loaded synchronously to guarantee availability before app.js runs. -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@14/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

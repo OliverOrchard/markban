@@ -131,6 +131,41 @@ public static class WebServer
         app.MapGet("/reports/cycle-time", (HttpContext context) =>
             Results.Redirect("/reports/cycle-time.html", permanent: false));
 
+        app.MapPut("/api/items/{id}", async (string id, HttpContext context) =>
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(id, @"^[0-9]+[a-z]?$"))
+            {
+                return Results.BadRequest(new { error = "Invalid item ID format." });
+            }
+
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var boardError);
+            if (resolvedRoot is null)
+            {
+                return Results.BadRequest(new { error = boardError });
+            }
+
+            var body = await context.Request.ReadFromJsonAsync<EditRequest>();
+            if (body is null)
+            {
+                return Results.BadRequest(new { error = "Request body is required." });
+            }
+
+            var items = WorkItemStore.LoadAll(resolvedRoot);
+            var item = items.FirstOrDefault(i => i.Id == id);
+            if (item is null)
+            {
+                return Results.NotFound(new { error = $"Item '{id}' not found." });
+            }
+
+            if (!IsPathSafe(item.FullPath, resolvedRoot))
+            {
+                return Results.StatusCode(403);
+            }
+
+            await WriteAtomicAsync(item.FullPath, body.Content);
+            return Results.Ok(new { message = "Item updated." });
+        });
+
         Console.WriteLine($"markban board running at {url}");
 
         if (!noOpen)
@@ -205,4 +240,21 @@ public static class WebServer
     }
 
     private record MoveRequest(string Identifier, string Target);
+    private record EditRequest(string Content);
+
+    private static bool IsPathSafe(string fullPath, string rootPath)
+    {
+        var normalizedItem = Path.GetFullPath(fullPath);
+        var normalizedRoot = Path.GetFullPath(rootPath);
+        return normalizedItem.StartsWith(
+            normalizedRoot + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task WriteAtomicAsync(string targetPath, string content)
+    {
+        var tempPath = targetPath + ".tmp";
+        await File.WriteAllTextAsync(tempPath, content, System.Text.Encoding.UTF8);
+        File.Move(tempPath, targetPath, overwrite: true);
+    }
 }
