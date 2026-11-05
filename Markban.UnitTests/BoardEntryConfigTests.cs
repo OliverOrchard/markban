@@ -149,6 +149,98 @@ public class BoardEntryConfigTests
             .WithMessage("*Board path not found*");
     }
 
+    [Fact]
+    public void LoadBoards_WhenRootBoardAbsentFromArray_PrependsRootBoard()
+    {
+        // Arrange
+        var projectDir = CreateTempDir("boards-root-absent");
+        var rootDir = Path.Combine(projectDir, "main-board");
+        var otherDir = Path.Combine(projectDir, "other");
+        Directory.CreateDirectory(rootDir);
+        Directory.CreateDirectory(otherDir);
+        File.WriteAllText(Path.Combine(projectDir, "markban.json"), """
+            {
+              "rootPath": "./main-board",
+              "boards": [ { "name": "Other", "path": "./other" } ]
+            }
+            """);
+
+        try
+        {
+            // Act
+            var boards = WorkItemStore.LoadBoards(projectDir);
+
+            // Assert
+            boards.Should().HaveCount(2);
+            boards[0].Name.Should().Be("Main-board", because: "the directory name is capitalised");
+            boards[0].ResolvedPath.Should().Be(Path.GetFullPath(rootDir));
+            boards[1].Name.Should().Be("Other");
+        }
+        finally
+        {
+            Directory.Delete(projectDir, true);
+        }
+    }
+
+    [Fact]
+    public void LoadBoards_WhenRootBoardAlreadyInArray_DoesNotDuplicateIt()
+    {
+        // Arrange
+        var projectDir = CreateTempDir("boards-root-present");
+        var rootDir = Path.Combine(projectDir, "main-board");
+        Directory.CreateDirectory(rootDir);
+        File.WriteAllText(Path.Combine(projectDir, "markban.json"), """
+            {
+              "rootPath": "./main-board",
+              "boards": [ { "name": "Mine", "path": "./main-board/" } ]
+            }
+            """);
+
+        try
+        {
+            // Act
+            var boards = WorkItemStore.LoadBoards(projectDir);
+
+            // Assert
+            boards.Should().ContainSingle().Which.Name.Should().Be("Mine");
+        }
+        finally
+        {
+            Directory.Delete(projectDir, true);
+        }
+    }
+
+    [Fact]
+    public void LoadBoards_WithTopLevelName_UsesItForRootBoard()
+    {
+        // Arrange
+        var projectDir = CreateTempDir("boards-root-name");
+        var otherDir = Path.Combine(projectDir, "other");
+        Directory.CreateDirectory(Path.Combine(projectDir, "main-board"));
+        Directory.CreateDirectory(otherDir);
+        File.WriteAllText(Path.Combine(projectDir, "markban.json"), """
+            {
+              "name": "Platform",
+              "rootPath": "./main-board",
+              "boards": [ { "name": "Other", "path": "./other" } ]
+            }
+            """);
+
+        try
+        {
+            // Act
+            var boards = WorkItemStore.LoadBoards(projectDir);
+
+            // Assert
+            boards[0].Name.Should().Be("Platform");
+            boards[0].Key.Should().Be("platform");
+        }
+        finally
+        {
+            Directory.Delete(projectDir, true);
+        }
+    }
+
     private static string CreateTempDir(string prefix)
     {
         var path = Path.Combine(Path.GetTempPath(), prefix + "-" + Guid.NewGuid().ToString("N")[..8]);

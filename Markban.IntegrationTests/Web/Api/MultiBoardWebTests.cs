@@ -55,8 +55,9 @@ public class MultiBoardWebTests : IDisposable
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        boards.Should().BeEquivalentTo(
-            [new BoardApiResponse("Backend", "backend"), new BoardApiResponse("Frontend", "frontend")]);
+        boards.Should().Equal(
+            [new BoardApiResponse("Main-board", "main-board"), new BoardApiResponse("Backend", "backend"), new BoardApiResponse("Frontend", "frontend")],
+            because: "the root board is auto-inserted first when the boards array omits it");
     }
 
     [Fact]

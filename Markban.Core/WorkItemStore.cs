@@ -234,6 +234,7 @@ public static class WorkItemStore
                 .Select((element, index) => ParseBoardEntry(element, configDir, index))
                 .ToList();
 
+            PrependRootBoardIfMissing(boards, doc.RootElement, configDir);
             EnsureUniqueBoardKeys(boards);
             return boards;
         }
@@ -242,6 +243,49 @@ public static class WorkItemStore
             throw new InvalidDataException($"Invalid markban.json at '{configPath}': {ex.Message}", ex);
         }
     }
+
+    private static void PrependRootBoardIfMissing(List<BoardEntry> boards, JsonElement config, string configDir)
+    {
+        var rootPath = TryGetConfiguredRootPath(configDir, throwOnInvalidJson: true) ?? GetDefaultRootPath(configDir);
+        if (rootPath == null || boards.Any(board => IsSameDirectory(board.ResolvedPath, rootPath)))
+        {
+            return;
+        }
+
+        var name = GetRootBoardName(config, rootPath);
+        var key = SlugHelper.Generate(name);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new InvalidDataException($"Invalid root board name '{name}': it does not produce a usable key.");
+        }
+
+        boards.Insert(0, new BoardEntry(name, key, rootPath));
+    }
+
+    private static string? GetDefaultRootPath(string configDir)
+    {
+        var nested = Path.Combine(configDir, "work-items");
+        return Directory.Exists(nested) ? Path.GetFullPath(nested) : null;
+    }
+
+    private static string GetRootBoardName(JsonElement config, string rootPath)
+    {
+        if (config.TryGetProperty("name", out var nameEl)
+            && nameEl.ValueKind == JsonValueKind.String
+            && !string.IsNullOrWhiteSpace(nameEl.GetString()))
+        {
+            return nameEl.GetString()!.Trim();
+        }
+
+        var directoryName = Path.GetFileName(Path.TrimEndingDirectorySeparator(rootPath));
+        return char.ToUpperInvariant(directoryName[0]) + directoryName[1..];
+    }
+
+    private static bool IsSameDirectory(string left, string right) =>
+        string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),
+            StringComparison.OrdinalIgnoreCase);
 
     public static string ResolveConfiguredBoardRoot(string boardPath)
     {

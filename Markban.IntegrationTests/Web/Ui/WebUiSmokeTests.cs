@@ -59,13 +59,13 @@ public class WebUiSmokeTests : IDisposable
 
         // Act
         await page.GotoAsync(server.BaseUrl);
-        await page.WaitForFunctionAsync("() => document.querySelectorAll('#board-select option').length === 2");
+        await page.WaitForFunctionAsync("() => document.querySelectorAll('#board-select option').length === 3");
         await page.SelectOptionAsync("#board-select", "frontend");
         await page.Locator(".card[data-slug='frontend-item']").WaitForAsync();
         var selectedBoard = await page.Locator("#board-select").InputValueAsync();
         var backendCardCount = await page.Locator(".card[data-slug='backend-item']").CountAsync();
         await page.ReloadAsync();
-        await page.WaitForFunctionAsync("() => document.querySelectorAll('#board-select option').length === 2");
+        await page.WaitForFunctionAsync("() => document.querySelectorAll('#board-select option').length === 3");
         await page.Locator(".card[data-slug='frontend-item']").WaitForAsync();
         var persistedBoard = await page.Locator("#board-select").InputValueAsync();
         var frontendCardCount = await page.Locator(".card[data-slug='frontend-item']").CountAsync();
@@ -98,7 +98,7 @@ public class WebUiSmokeTests : IDisposable
 
         // Act
         await page.GotoAsync(server.BaseUrl);
-        await page.WaitForFunctionAsync("() => document.querySelectorAll('#board-select option').length === 2");
+        await page.WaitForFunctionAsync("() => document.querySelectorAll('#board-select option').length === 3");
         await page.SelectOptionAsync("#board-select", "backend");
         await page.Locator(".card[data-slug='backend-task']").WaitForAsync();
         await page.ClickAsync(".card[data-slug='backend-task']");
