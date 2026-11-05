@@ -85,7 +85,12 @@ public class CommitRoute : CommandRoute
 
         bool dryRun = args.Contains("--dry-run");
 
-        CommitCommand.ExecuteAsync(rootPath, identifiers, tag, message, dryRun).GetAwaiter().GetResult();
+        var result = CommitCommand.ExecuteAsync(rootPath, identifiers, tag, message, dryRun).GetAwaiter().GetResult();
+        if (!result.Success)
+        {
+            Environment.ExitCode = 1;
+        }
+
         return true;
     }
 

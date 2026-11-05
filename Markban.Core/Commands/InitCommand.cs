@@ -181,6 +181,7 @@ public static class InitCommand
             "    \"featureBranches\": {\n",
             "      \"enabled\": false,\n",
             "      \"mainBranch\": \"main\",\n",
+            "      \"branchPrefix\": \"feature/\",\n",
             "      \"commitStrategy\": \"single\",\n",
             "      \"pullOnStart\": true,\n",
             "      \"checkoutOnDone\": true,\n",

@@ -27,7 +27,7 @@ public class StartRoute : CommandRoute
             return true;
         }
 
-        var unknownFlag = FindUnknownFlag(args, 2, KnownFlags, ValueFlags);
+        string? unknownFlag = FindUnknownFlag(args, 2, KnownFlags, ValueFlags);
         if (unknownFlag != null)
         {
             Console.Error.WriteLine($"Unknown flag '{unknownFlag}'.");
@@ -35,11 +35,16 @@ public class StartRoute : CommandRoute
             return true;
         }
 
-        var identifier = args[1];
-        var noPull = args.Contains("--no-pull");
-        var dryRun = args.Contains("--dry-run");
+        string identifier = args[1];
+        bool noPull = args.Contains("--no-pull", StringComparer.OrdinalIgnoreCase);
+        bool dryRun = args.Contains("--dry-run", StringComparer.OrdinalIgnoreCase);
 
-        StartCommand.ExecuteAsync(rootPath, identifier, noPull, dryRun).GetAwaiter().GetResult();
+        var result = StartCommand.ExecuteAsync(rootPath, identifier, noPull, dryRun).GetAwaiter().GetResult();
+        if (!result.Success)
+        {
+            Environment.ExitCode = 1;
+        }
+
         return true;
     }
 }
