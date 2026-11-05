@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Markban.UnitTests;
 
+[Collection("ConsoleOutput")]
 public class WipLimitTests
 {
     private static string CreateBoard(IReadOnlyList<(string Name, bool Ordered, string? Type, int? Wip)> lanes)

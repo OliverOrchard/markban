@@ -108,6 +108,36 @@ public static class WebServer
             return Results.Ok(new { message });
         });
 
+        app.MapGet("/api/settings", (HttpContext context) =>
+        {
+            context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var error);
+            if (resolvedRoot is null)
+            {
+                return Results.BadRequest(new { error });
+            }
+
+            var mode = WorkItemStore.LoadSettings(resolvedRoot).SubItemReorder;
+            return SubItemReorderMode.IsValid(mode)
+                ? Results.Ok(new { subItemReorder = mode })
+                : Results.BadRequest(new { error = SubItemReorderMode.InvalidValueMessage(mode) });
+        });
+
+        app.MapPost("/api/reorder", async (HttpContext context) =>
+        {
+            var body = await context.Request.ReadFromJsonAsync<WebReorderRequest>();
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var boardError);
+            if (resolvedRoot is null)
+            {
+                return Results.BadRequest(new { error = boardError });
+            }
+
+            var result = WebReorderHandler.Execute(resolvedRoot, body);
+            return result.IsSuccess
+                ? Results.Ok(new { message = result.Message })
+                : Results.BadRequest(new { error = result.Message });
+        });
+
         app.MapGet("/api/reports/cycle-time", async (HttpContext context) =>
         {
             context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";

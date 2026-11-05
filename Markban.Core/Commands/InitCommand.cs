@@ -200,6 +200,7 @@ public static class InitCommand
             "  \"dependsOn\": {\n",
             "    \"enabled\": true\n",
             "  },\n",
+            "  \"subItemReorder\": \"warn\",\n",
             "  \"customFrontmatter\": []\n",
             "}"
         );

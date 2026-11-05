@@ -250,6 +250,7 @@ function updateColumnCounts() {
 
 async function loadItems() {
     try {
+        await loadReorderSettings();
         const url = currentBoardKey ? `/api/items?board=${encodeURIComponent(currentBoardKey)}` : '/api/items';
         allWorkItems = await getJson(url, 'Failed to load work items.');
 
@@ -273,9 +274,7 @@ async function loadItems() {
             card.setAttribute('data-tags', item.tags ? item.tags.join(',') : '');
             const cardBadges = buildCardBadges(item);
             card.innerHTML = `<span class="card-id">${esc(item.id)}</span>${esc(item.slug)}${cardBadges}`;
-            card.draggable = true;
-            card.addEventListener('dragstart', onCardDragStart);
-            card.addEventListener('dragend', onCardDragEnd);
+            configureCardDrag(card, item);
             card.onclick = event => {
                 if (wasDragging) {
                     wasDragging = false;
@@ -573,42 +572,284 @@ function onCardDragStart(event) {
     draggedId = event.currentTarget.getAttribute('data-id');
     draggedStatus = event.currentTarget.getAttribute('data-status');
     wasDragging = true;
-    event.currentTarget.classList.add('dragging');
     event.dataTransfer.effectAllowed = 'move';
+    collapseDraggedCard(event.currentTarget);
+}
+
+function collapseDraggedCard(card) {
+    // Pin the height so it can animate to 0; collapse after the tick so the browser still snapshots the full-size drag image.
+    card.style.height = `${card.offsetHeight}px`;
+    setTimeout(() => {
+        if (draggedId !== null) {
+            card.classList.add('dragging');
+        }
+    }, 0);
+}
+
+function expandDraggedCard(card) {
+    card.classList.remove('dragging');
+    const clearHeight = () => { card.style.height = ''; };
+    card.addEventListener('transitionend', clearHeight, { once: true });
+    setTimeout(clearHeight, 300);
 }
 
 function onCardDragEnd(event) {
-    event.currentTarget.classList.remove('dragging');
+    expandDraggedCard(event.currentTarget);
     document.querySelectorAll('.cards.drag-over').forEach(element => element.classList.remove('drag-over'));
+    clearDropIndicators();
+}
+
+const DROP_GAP_PX = 36;
+const DROP_MARKER_HEIGHT_PX = 4;
+const SUB_ITEM_LOCKED_TIP = 'Sub-items stay with their parent. Change subItemReorder to reorder.';
+let subItemReorderMode = 'warn';
+
+function isSubItemId(id) {
+    return /^\d+[a-z]$/.test(id || '');
+}
+
+async function loadReorderSettings() {
+    try {
+        const url = currentBoardKey ? `/api/settings?board=${encodeURIComponent(currentBoardKey)}` : '/api/settings';
+        const data = await getJson(url, 'Failed to load board settings.');
+        subItemReorderMode = data.subItemReorder || 'warn';
+    } catch (err) {
+        subItemReorderMode = 'warn';
+        showReorderError(err.message);
+    }
+}
+
+function configureCardDrag(card, item) {
+    const locked = isSubItemId(item.id) && subItemReorderMode === 'block';
+    card.draggable = !locked;
+    if (locked) {
+        card.classList.add('sub-item-locked');
+        card.title = SUB_ITEM_LOCKED_TIP;
+    }
+
+    card.addEventListener('dragstart', onCardDragStart);
+    card.addEventListener('dragend', onCardDragEnd);
+}
+
+function zoneLane(zone) {
+    return zone.closest('.column').getAttribute('data-lane');
+}
+
+function laneCards(zone) {
+    return Array.from(zone.querySelectorAll(':scope > .card'));
+}
+
+function cardIds(zone) {
+    return laneCards(zone).map(card => card.getAttribute('data-id'));
+}
+
+function otherCards(zone) {
+    return laneCards(zone).filter(card => card.getAttribute('data-id') !== draggedId && !card.classList.contains('hidden'));
+}
+
+function insertIndexAt(zone, clientY) {
+    const y = clientY - zone.getBoundingClientRect().top + zone.scrollTop;
+    return otherCards(zone).filter(card => card.offsetTop + card.offsetHeight / 2 < y).length;
+}
+
+function computeDrop(zone, event) {
+    const sameLane = zoneLane(zone) === draggedStatus;
+    const index = sameLane ? insertIndexAt(zone, event.clientY) : otherCards(zone).length;
+    return { zone, index };
+}
+
+function gapCenter(zone, others, index) {
+    const prev = others[index - 1];
+    const next = others[index];
+    const padTop = parseFloat(getComputedStyle(zone).paddingTop) || 0;
+    const prevBottom = prev ? prev.offsetTop + prev.offsetHeight : (next ? next.offsetTop : padTop);
+    const nextTop = next ? next.offsetTop : prevBottom;
+    return (prevBottom + nextTop + DROP_GAP_PX) / 2;
+}
+
+function getDropMarker(zone) {
+    let marker = zone.querySelector(':scope > .drop-marker');
+    if (!marker) {
+        marker = document.createElement('div');
+        marker.className = 'drop-marker';
+        marker.setAttribute('aria-hidden', 'true');
+        zone.appendChild(marker);
+    }
+
+    return marker;
+}
+
+function showDropIndicator(drop) {
+    clearDropIndicators();
+    const others = otherCards(drop.zone);
+    others.forEach((card, i) => card.classList.toggle('drop-shift', i >= drop.index));
+    const marker = getDropMarker(drop.zone);
+    marker.style.top = `${gapCenter(drop.zone, others, drop.index) - DROP_MARKER_HEIGHT_PX / 2}px`;
+    marker.classList.add('visible');
+}
+
+function clearDropIndicators() {
+    document.querySelectorAll('.card.drop-shift').forEach(card => card.classList.remove('drop-shift'));
+    document.querySelectorAll('.drop-marker.visible').forEach(marker => marker.classList.remove('visible'));
+}
+
+function showReorderError(message) {
+    let banner = document.getElementById('reorder-error');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'reorder-error';
+        banner.className = 'reorder-error';
+        banner.setAttribute('role', 'alert');
+        document.body.appendChild(banner);
+    }
+
+    banner.textContent = message;
+    banner.style.display = 'block';
+    clearTimeout(banner.hideTimer);
+    banner.hideTimer = setTimeout(() => { banner.style.display = 'none'; }, 5000);
+}
+
+function restoreLane(zone, cards) {
+    cards.forEach(card => zone.appendChild(card));
+}
+
+async function postReorder(lane, orderedIds, detachId) {
+    const url = currentBoardKey ? `/api/reorder?board=${encodeURIComponent(currentBoardKey)}` : '/api/reorder';
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lane, orderedIds, detachId, confirmDetach: Boolean(detachId) })
+    });
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Reorder failed');
+    }
+}
+
+function showDetachDialog() {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.id = 'detach-dialog';
+        overlay.className = 'detach-overlay';
+        overlay.innerHTML = '<div class="detach-box" role="dialog" aria-modal="true" aria-labelledby="detach-title">'
+            + '<h3 id="detach-title">Detach sub-item?</h3>'
+            + '<p>This sub-item will be detached from its parent and renumbered as a standalone item.</p>'
+            + '<div class="detach-actions">'
+            + '<button type="button" id="detach-cancel" class="cancel-btn">Cancel</button>'
+            + '<button type="button" id="detach-continue" class="save-btn">Continue</button>'
+            + '</div></div>';
+        const finish = result => {
+            overlay.remove();
+            resolve(result);
+        };
+
+        overlay.querySelector('#detach-cancel').onclick = () => finish(false);
+        overlay.querySelector('#detach-continue').onclick = () => finish(true);
+        overlay.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                finish(false);
+            }
+        });
+        document.body.appendChild(overlay);
+        overlay.querySelector('#detach-continue').focus();
+    });
+}
+
+async function confirmDetach() {
+    if (subItemReorderMode === 'force') {
+        return true;
+    }
+
+    if (subItemReorderMode === 'warn') {
+        return showDetachDialog();
+    }
+
+    showReorderError(SUB_ITEM_LOCKED_TIP);
+    return false;
+}
+
+function placeCard(zone, dragged, index) {
+    const before = cardIds(zone).join(',');
+    zone.insertBefore(dragged, otherCards(zone)[index] || null);
+    return cardIds(zone).join(',') !== before;
+}
+
+async function persistReorder(zone, original, detachId) {
+    try {
+        await postReorder(zoneLane(zone), cardIds(zone), detachId);
+        await loadItems();
+    } catch (err) {
+        restoreLane(zone, original);
+        showReorderError(err.message || 'Reorder failed');
+    }
+}
+
+async function reorderWithinLane(zone, index) {
+    const id = draggedId;
+    const dragged = laneCards(zone).find(card => card.getAttribute('data-id') === id);
+    if (!dragged) {
+        return;
+    }
+
+    const original = laneCards(zone);
+    if (!placeCard(zone, dragged, index)) {
+        return;
+    }
+
+    const detachId = isSubItemId(id) ? id : null;
+    if (detachId && !(await confirmDetach())) {
+        restoreLane(zone, original);
+        return;
+    }
+
+    await persistReorder(zone, original, detachId);
+}
+
+async function handleDrop(zone, event) {
+    const lane = zoneLane(zone);
+    if (lane !== draggedStatus) {
+        await moveItemById(draggedId, lane);
+        return;
+    }
+
+    await reorderWithinLane(zone, computeDrop(zone, event).index);
 }
 
 function setupDropZones() {
     document.querySelectorAll('.cards').forEach(zone => {
+        if (zone.dataset.dropReady) {
+            return;
+        }
+
+        zone.dataset.dropReady = 'true';
         zone.addEventListener('dragover', event => {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
             zone.classList.add('drag-over');
+            if (draggedId) {
+                showDropIndicator(computeDrop(zone, event));
+            }
         });
         zone.addEventListener('dragleave', event => {
             if (!zone.contains(event.relatedTarget)) {
                 zone.classList.remove('drag-over');
+                clearDropIndicators();
             }
         });
         zone.addEventListener('drop', async event => {
             event.preventDefault();
             zone.classList.remove('drag-over');
-            const targetLane = zone.closest('.column').getAttribute('data-lane');
-            if (!draggedId || targetLane === draggedStatus) {
+            clearDropIndicators();
+            if (!draggedId) {
                 return;
             }
 
-            await moveItemById(draggedId, targetLane);
+            await handleDrop(zone, event);
             draggedId = null;
             draggedStatus = null;
         });
     });
 }
-
 async function moveItemById(identifier, target) {
     try {
         const moveUrl = currentBoardKey ? `/api/move?board=${encodeURIComponent(currentBoardKey)}` : '/api/move';

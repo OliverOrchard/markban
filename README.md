@@ -110,7 +110,7 @@ markban search <term> [--full]
 markban move <id|slug> <lane> [--override-wip]
 markban progress <id|slug> [--dry-run]
 markban next-id
-markban reorder <lane> <order> [--no-sub-items] [--dry-run] [--start-number <n>]
+markban reorder <lane> <order> [--no-sub-items] [--dry-run] [--start-number <n>] [--yes]
 markban create "Title" [--lane <lane>] [--after <id>] [--priority] [--override-wip]
 markban create "Title" --sub-item --parent <id>
 markban rename <id|slug> "New Title" [--dry-run]
@@ -256,6 +256,7 @@ In multi-board mode:
 | `name` | string | Display name for the board. |
 | `lanes` | array | Lane definitions. When omitted, the standard lanes above are used. |
 | `boards` | array | Optional list of child boards for multi-board mode. |
+| `subItemReorder` | `"warn"` \| `"block"` \| `"force"` | Controls reordering a lettered sub-item (e.g. `32a`) in the web UI and in `markban reorder` (where sub-item ids may appear in `<order>`; `--yes` skips the `Continue? [y/N]` prompt, `--dry-run` previews the detach/renumber plan, and a non-interactive stdin counts as "no" without `--yes`). `"warn"` (default, written by `markban init`): dragging a sub-item asks for confirmation, then detaches it from its parent and renumbers it as a standalone item. `"block"`: sub-item cards cannot be dragged, the API rejects the request with 400, and the CLI exits non-zero without changes. `"force"`: the sub-item is detached and reordered without asking. Any other value is an error. The parent's other sub-items stay attached to the parent. |
 
 **Lane properties** (`lanes[*]`)
 

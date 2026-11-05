@@ -197,7 +197,7 @@ public static class ReorderCommand
     /// Returns the index of the first H1 heading line, skipping any frontmatter block.
     /// Returns -1 if no heading is found.
     /// </summary>
-    private static int FindHeadingLine(string[] lines)
+    internal static int FindHeadingLine(string[] lines)
     {
         var i = 0;
 

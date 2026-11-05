@@ -205,6 +205,7 @@ header {
 }
 .col-count, .col-blocked-count { color: var(--muted); font-size: 0.8rem; font-weight: normal; letter-spacing: normal; text-transform: none; }
 .cards {
+    position: relative;
     flex: 1;
     padding: 10px;
     overflow-y: auto;
@@ -230,7 +231,19 @@ header {
 .card.Ideas { border-left-color: var(--ideas); }
 .card.Rejected { border-left-color: var(--rejected); }
 .card.hidden { display: none; }
-.card.dragging { opacity: 0.4; cursor: grabbing; transform: none; }
+.card.dragging {
+    height: 0 !important;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transform: scale(0.97);
+}
 .cards.drag-over { background: var(--accent-soft); outline: 2px dashed var(--accent); outline-offset: -4px; border-radius: 4px; }
 
 .card-id { font-weight: bold; color: var(--accent); margin-right: 8px; }
@@ -425,4 +438,29 @@ blockquote { border-left: 4px solid var(--accent); margin: 0; padding-left: 20px
 @media (prefers-reduced-motion: reduce) {
     .card, .filter-btn { transition: none; }
     .card:hover { transform: none; }
+}
+.reorder-error { display: none; position: fixed; bottom: 16px; right: 16px; z-index: 1000; padding: 10px 14px; border-radius: 6px; background: #b3261e; color: #fff; }
+:root { --drop-gap: 36px; }
+.card.drop-shift, .card.drop-shift:hover { transform: translateY(var(--drop-gap)); }
+.drop-marker {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    pointer-events: none;
+    opacity: 0;
+    transform: scaleX(0.6);
+    transition: opacity 0.15s, transform 0.2s;
+}
+.drop-marker.visible { opacity: 1; transform: scaleX(1); }
+.card.sub-item-locked { cursor: not-allowed; }
+.detach-overlay { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); }
+.detach-box { max-width: 420px; padding: 20px; border-radius: 8px; background: var(--card-bg); color: var(--text); border: 1px solid var(--border); box-shadow: 0 8px 24px var(--shadow); }
+.detach-box h3 { margin-top: 0; }
+.detach-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+@media (prefers-reduced-motion: reduce) {
+    .drop-marker { transition: none; }
 }

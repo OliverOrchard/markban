@@ -144,6 +144,8 @@ public static class WorkItemStore
                     .ToList();
             }
 
+            var subItemReorder = ReadSubItemReorder(doc.RootElement);
+
             FeatureBranchSettings? featureBranches = null;
             if (doc.RootElement.TryGetProperty("git", out var gitEl)
                 && gitEl.TryGetProperty("featureBranches", out var fbEl)
@@ -153,12 +155,23 @@ public static class WorkItemStore
             }
 
             return new BoardSettings(maxLen, commitTags, headingEnabled, slugCasing,
-                blockedEnabled, tagsEnabled, dependsOnEnabled, customFrontmatter, featureBranches);
+                blockedEnabled, tagsEnabled, dependsOnEnabled, customFrontmatter, featureBranches, subItemReorder);
         }
         catch (JsonException)
         {
             return new BoardSettings();
         }
+    }
+
+    private static string ReadSubItemReorder(JsonElement root)
+    {
+        if (!root.TryGetProperty("subItemReorder", out var el))
+        {
+            return SubItemReorderMode.Warn;
+        }
+
+        // Non-string values are kept as their raw text so validation reports them clearly.
+        return el.ValueKind == JsonValueKind.String ? el.GetString() ?? string.Empty : el.ToString();
     }
 
     private static CustomFrontmatterField? ParseCustomField(JsonElement el)
