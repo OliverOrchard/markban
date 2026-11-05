@@ -39,6 +39,7 @@ else
     {
         Console.Error.WriteLine("Error: No 'work-items' directory found in this directory or any parent.");
         Console.Error.WriteLine("Run 'markban help' for usage, or create a work-items/ folder to get started.");
+        Environment.ExitCode = 1;
         return;
     }
 }

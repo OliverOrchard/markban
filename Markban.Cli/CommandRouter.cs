@@ -26,6 +26,7 @@ public static class CommandRouter
         new DependsOnRoute(),
         new CycleTimeRoute(),
         new StartRoute(),
+        new BoardRoute(),
     ];
 
     public static bool Route(string[] args, string rootPath)
