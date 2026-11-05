@@ -62,9 +62,10 @@ For Antigravity substitute `--kind agy`. Use a name matching Herdr's documented 
 For Antigravity workers, pass the bundled per-session permission rules so routine build/test/format commands do not stall on approval prompts, while commit, push and branch switching are denied (deny wins over allow). The rules live in `agy-worker-settings.json` beside this skill and apply only to workers you start; they never touch the user's global Antigravity settings:
 
 ```powershell
-herdr agent start <unique-worker-name> --kind agy --pane $workerPane -- --model <model> --settings "<repo>\.agents\skills\markban-orchestrator\agy-worker-settings.json"
+herdr agent start <unique-worker-name> --kind agy --pane $workerPane -- --model <model> --mode accept-edits --settings "<repo>\.agents\skills\markban-orchestrator\agy-worker-settings.json"
 ```
 
+`--mode accept-edits` auto-approves file edits and creation without prompts; explicit deny rules still take precedence over the mode. Do not use `--mode auto`, which also auto-approves safe commands outside the allow list.
 Commands containing `$(...)`, backticks or similar still need an exact match and may prompt. To change the allowed commands, edit the source under `.apm`, never the deployed copy.
 
 Submit the assignment using `herdr agent prompt <name> "<assignment>"`. To start a parallel batch, submit each authorized assignment without a blocking wait, then collect results via `agent get`, bounded `agent wait`, and `agent read`. Follow Herdr's activity/readiness rules; an idle state immediately after submission is not proof the prompt ran. Do not blindly retry a timeout or stalled prompt because it may already have been delivered.

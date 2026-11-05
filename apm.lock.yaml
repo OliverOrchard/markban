@@ -142,7 +142,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:c89b471c3358829da78c11abd7feb52c9cf812ec953e69f0e02c516bc6596167
+  content_hash: sha256:82537129aa0d4af97d2d57bacce74946968a6077776ecdbb4acd7b17474a7bdb
 - kind: project-relative
   target: legacy
   value: .agents/skills/markban-orchestrator/agy-worker-settings.json
@@ -171,7 +171,7 @@ local_deployed_file_hashes:
   .agents/rules/project.md: sha256:84f51f57305375886a926c4c8d01fe6c0274d07df5aa77dee75a527166947fac
   .agents/rules/testing-standards.md: sha256:50aba644c61e31fefcad5315572de99bc41d234d132d7983fe39840584e13218
   .agents/skills/markban-developer/SKILL.md: sha256:c129d063d35fef2db0ddd0b9f5121c9e7a94728f551bce6a8565aa0e16ed01e3
-  .agents/skills/markban-orchestrator/SKILL.md: sha256:c89b471c3358829da78c11abd7feb52c9cf812ec953e69f0e02c516bc6596167
+  .agents/skills/markban-orchestrator/SKILL.md: sha256:82537129aa0d4af97d2d57bacce74946968a6077776ecdbb4acd7b17474a7bdb
   .agents/skills/markban-orchestrator/agy-worker-settings.json: sha256:658566ba859047a52239ff82e59583a2ad5e3e8f077179823b26f82b0b7b7fb0
   .github/agents/developer.agent.md: sha256:6f7d1e5b8f72d90a6ff1744fb04c938bbba57c726643cc6e5da50bd106f444b9
   .github/agents/orchestrator.agent.md: sha256:27be48ec9d7e9ed95f161463881ba44de120bbd329d329ec9fa2673a4e5e4e64
