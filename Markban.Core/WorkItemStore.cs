@@ -472,6 +472,10 @@ public static class WorkItemStore
 
     private static string GetConfigPath(string configDir) => Path.Combine(configDir, ConfigFileName);
 
+    /// <summary>Path of markban.json for a board root (the file lives next to the board directory).</summary>
+    public static string GetBoardConfigPath(string root)
+        => GetConfigPath(Path.GetDirectoryName(root) ?? root);
+
     private static string? FindLaneDirectory(string root, string laneName)
     {
         var exact = Path.Combine(root, laneName);

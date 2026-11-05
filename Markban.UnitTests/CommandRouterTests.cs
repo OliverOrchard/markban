@@ -43,6 +43,7 @@ public class CommandRouterTests
             typeof(CycleTimeRoute),
             typeof(StartRoute),
             typeof(BoardRoute),
+            typeof(LaneRenameRoute),
         };
 
         // Act

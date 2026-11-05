@@ -27,6 +27,7 @@ public static class CommandRouter
         new CycleTimeRoute(),
         new StartRoute(),
         new BoardRoute(),
+        new LaneRenameRoute(),
     ];
 
     public static bool Route(string[] args, string rootPath)

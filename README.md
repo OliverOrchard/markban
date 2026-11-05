@@ -114,6 +114,7 @@ markban reorder <lane> <order> [--no-sub-items] [--dry-run] [--start-number <n>]
 markban create "Title" [--lane <lane>] [--after <id>] [--priority] [--override-wip]
 markban create "Title" --sub-item --parent <id>
 markban rename <id|slug> "New Title" [--dry-run]
+markban lane rename <old-name> <new-name> [--dry-run]
 markban overview
 markban sanitize
 markban health [check-links|check-order] [--include-ideas] [--fix]
@@ -266,7 +267,7 @@ In multi-board mode:
 | `pickable` | boolean | `true` | `false` excludes this lane from `next` and `create` defaults. Use for holding lanes (`Ideas`, `Rejected`). |
 | `wip` | number | none | Maximum items allowed in this lane. No property = no limit. |
 
-Array order drives the `progress` command (advance an item one lane forward).
+Array order drives the `progress` command (advance an item one lane forward). Use `markban lane rename <old-name> <new-name> [--dry-run]` to atomically rename a lane directory and update its `name` in `markban.json`.
 
 **`git` properties**
 
