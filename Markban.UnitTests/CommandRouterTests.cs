@@ -6,10 +6,10 @@ namespace Markban.UnitTests;
 public class CommandRouterTests
 {
     [Fact]
-    public void Routes_ContainsAllTwentyFiveRoutes_AfterInit()
+    public void Routes_ContainsAllTwentySixRoutes_AfterInit()
     {
-        CommandRouter.Routes.Should().HaveCount(25,
-            because: "there are twenty-five CLI commands routed through the strategy pattern");
+        CommandRouter.Routes.Should().HaveCount(26,
+            because: "there are twenty-six CLI commands routed through the strategy pattern");
     }
 
     [Fact]

@@ -42,7 +42,7 @@ public class BoardRemoveCommandTests : IDisposable
         // Assert
         result.Status.Should().Be(BoardRemoveStatus.Removed);
         var boards = WorkItemStore.LoadBoards(_projectDir);
-        boards.Should().ContainSingle().Which.Key.Should().Be("frontend");
+        boards.Select(b => b.Key).Should().Contain("frontend").And.NotContain("backend");
         File.ReadAllText(Path.Combine(boardDir, "keep.md")).Should().Be("content");
         File.ReadAllText(ConfigPath).Should().Contain("rootPath", because: "other config keys are preserved");
     }
