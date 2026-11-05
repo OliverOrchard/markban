@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "command(dotnet format)",
+      "command(dotnet build)",
+      "command(dotnet test)",
+      "command(git status)",
+      "command(git diff)",
+      "command(git log)",
+      "command(git rev-parse)",
+      "command(git branch --show-current)"
+    ],
+    "deny": [
+      "command(git commit)",
+      "command(git push)",
+      "command(git checkout)",
+      "command(git switch)",
+      "command(git reset)",
+      "command(git clean)",
+      "command(markban commit)"
+    ]
+  }
+}
