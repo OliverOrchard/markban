@@ -44,17 +44,17 @@ An optional mode where markban manages a full feature branch lifecycle per work 
 
 ## Acceptance Criteria
 
-- [ ] `featureBranches.enabled: false` (default) -- `--start` still moves item to the next lane in config order, just skips branch creation
-- [ ] `--start` when feature branches disabled does not error -- moves item to next lane in config order silently
-- [ ] `--start <id>` errors with clear message if working tree is dirty
-- [ ] `--start <id>` checks out main and pulls latest before branching (default)
-- [ ] `--start --no-pull` skips the pull step
-- [ ] `pullOnStart: false` config permanently disables pull on start
-- [ ] `--start <id>` creates `feature/<slug>` branch and moves item to In Progress atomically
-- [ ] `commitStrategy: single` -- `--commit` does one commit + PR + moves to Done
-- [ ] `commitStrategy: multiple` -- `--commit` opens PR from existing commits + moves to Done
-- [ ] `commitStrategy: squash` -- `--commit` squashes all branch commits then opens PR + moves to Done
-- [ ] `checkoutOnDone: true` checks out and pulls main after PR creation
-- [ ] `mainBranch` config drives all branch base and checkout targets
-- [ ] `markban init` writes feature branch defaults as disabled in explicit config (see [explicit-defaults-in-init])
-- [ ] `--dry-run` on `--start` and `--commit` shows planned git commands and lane moves
+- [x] `featureBranches.enabled: false` (default) -- `--start` still moves item to the next lane in config order, just skips branch creation
+- [x] `--start` when feature branches disabled does not error -- moves item to next lane in config order silently
+- [x] `--start <id>` errors with clear message if working tree is dirty
+- [x] `--start <id>` checks out main and pulls latest before branching (default)
+- [x] `--start --no-pull` skips the pull step
+- [x] `pullOnStart: false` config permanently disables pull on start
+- [x] `--start <id>` creates `feature/<slug>` branch and moves item to In Progress atomically
+- [x] `commitStrategy: single` -- `--commit` does one commit + PR + moves to Done
+- [x] `commitStrategy: multiple` -- `--commit` opens PR from existing commits + moves to Done
+- [x] `commitStrategy: squash` -- `--commit` squashes all branch commits then opens PR + moves to Done
+- [x] `checkoutOnDone: true` checks out and pulls main after PR creation
+- [x] `mainBranch` config drives all branch base and checkout targets
+- [x] `markban init` writes feature branch defaults as disabled in explicit config (see [explicit-defaults-in-init])
+- [x] `--dry-run` on `--start` and `--commit` shows planned git commands and lane moves
