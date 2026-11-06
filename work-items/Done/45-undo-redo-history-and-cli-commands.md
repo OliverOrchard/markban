@@ -37,30 +37,30 @@ When disabled, nothing is recorded and `undo`/`redo` report that history is disa
 ## Acceptance Criteria
 
 ### Journal
-- [ ] Successful `reorder` and `move` operations (CLI and web) append an entry; dry-runs and failures do not
-- [ ] The journal lives outside the work-item lanes and is gitignored (or documented as such)
-- [ ] `history.maxEntries` is honoured and the oldest entries are dropped
-- [ ] A corrupt or unreadable journal is reported clearly and never blocks normal commands
+- [x] Successful `reorder` and `move` operations (CLI and web) append an entry; dry-runs and failures do not
+- [x] The journal lives outside the work-item lanes and is gitignored (or documented as such)
+- [x] `history.maxEntries` is honoured and the oldest entries are dropped
+- [x] A corrupt or unreadable journal is reported clearly and never blocks normal commands
 
 ### Commands
-- [ ] `markban undo` restores the previous file numbering/location and moves the entry to the redo stack
-- [ ] `markban redo` re-applies an undone entry; a new operation clears the redo stack
-- [ ] `markban undo --list` and `markban redo --list` show the stacks
-- [ ] `--dry-run` on both previews the exact changes without writing
-- [ ] Undoing a `force` sub-item reorder re-attaches the sub-item to its original parent
-- [ ] Undo/redo with an empty stack exits non-zero with a clear message
+- [x] `markban undo` restores the previous file numbering/location and moves the entry to the redo stack
+- [x] `markban redo` re-applies an undone entry; a new operation clears the redo stack
+- [x] `markban undo --list` and `markban redo --list` show the stacks
+- [x] `--dry-run` on both previews the exact changes without writing
+- [x] Undoing a `force` sub-item reorder re-attaches the sub-item to its original parent
+- [x] Undo/redo with an empty stack exits non-zero with a clear message
 
 ### Safety
-- [ ] If any affected file changed since the entry was recorded, undo/redo refuses, names the files, exits non-zero, and changes nothing
-- [ ] Undo and redo are themselves not recorded as new undoable operations (they move entries between stacks)
+- [x] If any affected file changed since the entry was recorded, undo/redo refuses, names the files, exits non-zero, and changes nothing
+- [x] Undo and redo are themselves not recorded as new undoable operations (they move entries between stacks)
 
 ### Configuration and API
-- [ ] `history.enabled` and `history.maxEntries` are parsed from `markban.json` with explicit defaults written by `markban init`
-- [ ] With `history.enabled: false` nothing is recorded and the commands explain why they do nothing
-- [ ] `POST /api/undo`, `POST /api/redo` and `GET /api/history` operate on the same journal
-- [ ] README documents the commands, the safety rule and the config
+- [x] `history.enabled` and `history.maxEntries` are parsed from `markban.json` with explicit defaults written by `markban init`
+- [x] With `history.enabled: false` nothing is recorded and the commands explain why they do nothing
+- [x] `POST /api/undo`, `POST /api/redo` and `GET /api/history` operate on the same journal
+- [x] README documents the commands, the safety rule and the config
 
 ### Tests
-- [ ] Unit tests for journal write, undo, redo, stack clearing, max entries and the hash-mismatch refusal
-- [ ] Integration test: CLI `reorder` then `undo` then `redo` round-trips the board
-- [ ] Integration test: a CLI reorder can be undone through the web API
+- [x] Unit tests for journal write, undo, redo, stack clearing, max entries and the hash-mismatch refusal
+- [x] Integration test: CLI `reorder` then `undo` then `redo` round-trips the board
+- [x] Integration test: a CLI reorder can be undone through the web API
