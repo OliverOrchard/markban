@@ -43,7 +43,9 @@ public static class DetachSubItemCommand
     {
         var folder = Path.GetDirectoryName(item.FullPath)!;
         var newPath = Path.Combine(folder, $"{newId}-{item.Slug}.md");
+        HistoryRecorder.CaptureBefore(item.FullPath);
         File.Move(item.FullPath, newPath);
+        HistoryRecorder.TrackMove(item.FullPath, newPath);
         UpdateHeading(newPath, newId);
     }
 

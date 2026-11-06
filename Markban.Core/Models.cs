@@ -28,7 +28,8 @@ public record BoardSettings(
     bool DependsOnEnabled = true,
     IReadOnlyList<CustomFrontmatterField>? CustomFrontmatter = null,
     FeatureBranchSettings? FeatureBranches = null,
-    string SubItemReorder = SubItemReorderMode.Warn);
+    string SubItemReorder = SubItemReorderMode.Warn,
+    HistorySettings? History = null);
 
 public record CustomFrontmatterField(string Name, string? Default, bool HasDefault = false);
 

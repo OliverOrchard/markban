@@ -69,6 +69,7 @@ public static class CheckOrderCommand
 
             var newOrder = string.Join(",", sorted.Select(i => i.Id));
             messages.Add($"  --fix: Reordered '{lane.Name}' to resolve dependency violations.");
+            using var _ = HistoryRecorder.Suppress();
             ReorderCommand.Execute(rootPath, lane.Name, newOrder, noSubItems: true, dryRun: false);
         }
     }

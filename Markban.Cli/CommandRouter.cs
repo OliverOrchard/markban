@@ -29,6 +29,8 @@ public static class CommandRouter
         new BoardRoute(),
         new LaneAddRoute(),
         new LaneRenameRoute(),
+        new UndoRoute(),
+        new RedoRoute(),
     ];
 
     public static bool Route(string[] args, string rootPath)

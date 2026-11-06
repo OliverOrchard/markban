@@ -43,6 +43,7 @@ public static class ProgressCommand
             return;
         }
 
+        using var _ = HistoryRecorder.Suppress();
         MoveCommand.Execute(rootPath, identifier, nextLane.Name);
     }
 }

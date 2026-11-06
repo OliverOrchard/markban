@@ -87,7 +87,11 @@ public static class StartCommand
             return new StartResult(true, null, nextLane, null);
         }
 
-        MoveCommand.Execute(rootPath, item.Id, nextLane);
+        using (HistoryRecorder.Suppress())
+        {
+            MoveCommand.Execute(rootPath, item.Id, nextLane);
+        }
+
         return new StartResult(true, null, nextLane, null);
     }
 
@@ -177,7 +181,11 @@ public static class StartCommand
         string mainBranch,
         string branchName)
     {
-        MoveCommand.Execute(rootPath, item.Id, nextLane);
+        using (HistoryRecorder.Suppress())
+        {
+            MoveCommand.Execute(rootPath, item.Id, nextLane);
+        }
+
         var verify = WorkItemStore.LoadAll(rootPath).FirstOrDefault(i =>
             i.Id.Equals(item.Id, StringComparison.OrdinalIgnoreCase) &&
             i.Slug.Equals(item.Slug, StringComparison.OrdinalIgnoreCase));

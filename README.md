@@ -111,6 +111,8 @@ markban move <id|slug> <lane> [--override-wip]
 markban progress <id|slug> [--dry-run]
 markban next-id
 markban reorder <lane> <order> [--no-sub-items] [--dry-run] [--start-number <n>] [--yes]
+markban undo [--dry-run] [--list]
+markban redo [--dry-run] [--list]
 markban create "Title" [--lane <lane>] [--after <id>] [--priority] [--override-wip]
 markban create "Title" --sub-item --parent <id>
 markban rename <id|slug> "New Title" [--dry-run]
@@ -257,6 +259,14 @@ In multi-board mode:
 | `lanes` | array | Lane definitions. When omitted, the standard lanes above are used. |
 | `boards` | array | Optional list of child boards for multi-board mode. |
 | `subItemReorder` | `"warn"` \| `"block"` \| `"force"` | Controls reordering a lettered sub-item (e.g. `32a`) in the web UI and in `markban reorder` (where sub-item ids may appear in `<order>`; `--yes` skips the `Continue? [y/N]` prompt, `--dry-run` previews the detach/renumber plan, and a non-interactive stdin counts as "no" without `--yes`). `"warn"` (default, written by `markban init`): dragging a sub-item asks for confirmation, then detaches it from its parent and renumbers it as a standalone item. `"block"`: sub-item cards cannot be dragged, the API rejects the request with 400, and the CLI exits non-zero without changes. `"force"`: the sub-item is detached and reordered without asking. Any other value is an error. The parent's other sub-items stay attached to the parent. |
+| `history` | object | Configures the persisted undo/redo journal (stored in `.markban/history.json`, outside the work-item lanes and gitignored). Shared by CLI (`markban undo`, `markban redo`, `markban undo --list`, `markban redo --list`, plus `--dry-run`) and the web API (`GET /api/history`, `POST /api/undo`, `POST /api/redo`). Before undoing or redoing, markban verifies that every affected file still matches its recorded SHA-256 content hash; if any file was edited, moved, or deleted since, undo/redo refuses, names the files, and changes nothing. |
+
+**`history` properties**
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | boolean | `true` | Record successful non-dry-run `reorder` and `move` operations. When `false`, nothing is recorded and `undo`/`redo` explain that history is disabled. |
+| `maxEntries` | number | `50` | Maximum entries kept in the history stacks; oldest entries are dropped when exceeded. |
 
 **Lane properties** (`lanes[*]`)
 

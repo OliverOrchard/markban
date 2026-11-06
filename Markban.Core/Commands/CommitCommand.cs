@@ -384,6 +384,7 @@ public static class CommitCommand
 
     private static void MoveItemsToDone(string rootPath, IReadOnlyList<WorkItem> items, string doneLaneName)
     {
+        using var _ = HistoryRecorder.Suppress();
         foreach (var item in items)
         {
             if (item.Status.Equals(doneLaneName, StringComparison.OrdinalIgnoreCase))

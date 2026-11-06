@@ -157,40 +157,47 @@ public static class ReorderCommand
         }
 
         // Two-pass rename to avoid collisions (e.g. 34->35 when 35 still exists)
-        var folderPath = Path.Combine(rootPath, normalizedFolder);
-        var tempMap = new Dictionary<string, string>();
-
-        foreach (var entry in renamePlan.Where(e => e.Changed))
+        HistoryRecorder.Record(rootPath, HistoryOperations.Reorder, $"reorder {normalizedFolder} {orderArg}", dryRun, () =>
         {
-            var tempName = $"__tmp_{Path.GetRandomFileName().Replace(".", "")}-{entry.OldName}";
-            var tempPath = Path.Combine(folderPath, tempName);
-            File.Move(entry.OldPath, tempPath);
-            tempMap[entry.NewName] = tempPath;
-        }
+            var folderPath = Path.Combine(rootPath, normalizedFolder);
+            var tempMap = new Dictionary<string, string>();
 
-        foreach (var entry in renamePlan.Where(e => e.Changed))
-        {
-            File.Move(tempMap[entry.NewName], Path.Combine(folderPath, entry.NewName));
-        }
-
-        // Update "# N[a] - Title" heading in each renamed file
-        var headingsUpdated = 0;
-        foreach (var entry in renamePlan.Where(e => e.Changed))
-        {
-            var finalPath = Path.Combine(folderPath, entry.NewName);
-            var lines = File.ReadAllLines(finalPath, Encoding.UTF8);
-            var headingIdx = FindHeadingLine(lines);
-            if (headingIdx >= 0 && Regex.IsMatch(lines[headingIdx], @"^# \d+[a-z]? - .+$"))
+            foreach (var entry in renamePlan.Where(e => e.Changed))
             {
-                var titleMatch = Regex.Match(lines[headingIdx], @"^# \d+[a-z]? - (.+)$");
-                lines[headingIdx] = $"# {entry.NewHeadingId} - {titleMatch.Groups[1].Value}";
-                File.WriteAllLines(finalPath, lines, new UTF8Encoding(false));
-                headingsUpdated++;
+                var tempName = $"__tmp_{Path.GetRandomFileName().Replace(".", "")}-{entry.OldName}";
+                var tempPath = Path.Combine(folderPath, tempName);
+                HistoryRecorder.CaptureBefore(entry.OldPath);
+                File.Move(entry.OldPath, tempPath);
+                HistoryRecorder.TrackMove(entry.OldPath, tempPath);
+                tempMap[entry.NewName] = tempPath;
             }
-        }
 
-        var changed = renamePlan.Count(e => e.Changed);
-        Console.WriteLine($"\n{changed} file(s) renamed, {headingsUpdated} heading(s) updated.");
+            foreach (var entry in renamePlan.Where(e => e.Changed))
+            {
+                var finalPath = Path.Combine(folderPath, entry.NewName);
+                File.Move(tempMap[entry.NewName], finalPath);
+                HistoryRecorder.TrackMove(tempMap[entry.NewName], finalPath);
+            }
+
+            // Update "# N[a] - Title" heading in each renamed file
+            var headingsUpdated = 0;
+            foreach (var entry in renamePlan.Where(e => e.Changed))
+            {
+                var finalPath = Path.Combine(folderPath, entry.NewName);
+                var lines = File.ReadAllLines(finalPath, Encoding.UTF8);
+                var headingIdx = FindHeadingLine(lines);
+                if (headingIdx >= 0 && Regex.IsMatch(lines[headingIdx], @"^# \d+[a-z]? - .+$"))
+                {
+                    var titleMatch = Regex.Match(lines[headingIdx], @"^# \d+[a-z]? - (.+)$");
+                    lines[headingIdx] = $"# {entry.NewHeadingId} - {titleMatch.Groups[1].Value}";
+                    File.WriteAllLines(finalPath, lines, new UTF8Encoding(false));
+                    headingsUpdated++;
+                }
+            }
+
+            var changed = renamePlan.Count(e => e.Changed);
+            Console.WriteLine($"\n{changed} file(s) renamed, {headingsUpdated} heading(s) updated.");
+        });
     }
 
     /// <summary>

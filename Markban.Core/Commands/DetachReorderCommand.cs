@@ -11,18 +11,21 @@ public static class DetachReorderCommand
     public static DetachSubItemResult Execute(string rootPath, string lane, IEnumerable<string> orderedIds, IReadOnlyCollection<string> detachIds)
     {
         var ids = orderedIds.ToList();
-        foreach (var detachId in detachIds)
+        return HistoryRecorder.Record(rootPath, HistoryOperations.Reorder, $"reorder {lane} {string.Join(",", ids)}", dryRun: false, () =>
         {
-            var detach = DetachSubItemCommand.Execute(rootPath, lane, detachId);
-            if (!detach.IsSuccess)
+            foreach (var detachId in detachIds)
             {
-                return detach;
+                var detach = DetachSubItemCommand.Execute(rootPath, lane, detachId);
+                if (!detach.IsSuccess)
+                {
+                    return detach;
+                }
+
+                ids = ids.Select(id => id == detachId ? detach.NewId! : id).ToList();
             }
 
-            ids = ids.Select(id => id == detachId ? detach.NewId! : id).ToList();
-        }
-
-        return Reorder(rootPath, lane, ids);
+            return Reorder(rootPath, lane, ids);
+        });
     }
 
     /// <summary>Lists the standalone ids the given sub-items would receive, in order.</summary>

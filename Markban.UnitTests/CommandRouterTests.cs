@@ -6,10 +6,13 @@ namespace Markban.UnitTests;
 public class CommandRouterTests
 {
     [Fact]
-    public void Routes_ContainsAllTwentySevenRoutes_AfterInit()
+    public void Routes_ContainsAllTwentyNineRoutes_AfterInit()
     {
-        CommandRouter.Routes.Should().HaveCount(27,
-            because: "there are twenty-seven CLI commands routed through the strategy pattern");
+        // Arrange — routes are statically initialized
+
+        // Act / Assert
+        CommandRouter.Routes.Should().HaveCount(29,
+            because: "there are twenty-nine CLI commands routed through the strategy pattern");
     }
 
     [Fact]
@@ -45,6 +48,8 @@ public class CommandRouterTests
             typeof(BoardRoute),
             typeof(LaneAddRoute),
             typeof(LaneRenameRoute),
+            typeof(UndoRoute),
+            typeof(RedoRoute),
         };
 
         // Act

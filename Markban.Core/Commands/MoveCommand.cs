@@ -71,24 +71,29 @@ public static class MoveCommand
         }
 
         var newPath = Path.Combine(rootPath, normalizedTarget, newFileName);
-        Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
-
-        // Sanitize and save to new location, then delete old
-        var content = File.ReadAllText(item.FullPath);
-        var sanitized = SanitizeCommand.SanitizeText(content);
-        sanitized = SanitizeCommand.FixReferences(sanitized, items).Text;
-
-        File.WriteAllText(newPath, sanitized, new UTF8Encoding(false));
-        File.Delete(item.FullPath);
-
-        var displayId = string.IsNullOrEmpty(item.Id) ? item.Slug : $"{item.Id} - {item.Slug}";
-        Console.WriteLine($"Successfully moved '{displayId}' to {normalizedTarget} as '{newFileName}'.");
-
-        // Auto-compact source folder if we moved from an ordered lane to an unordered lane
-        if (!targetLane.Ordered && sourceLane?.Ordered == true)
+        HistoryRecorder.Record(rootPath, HistoryOperations.Move, $"move {identifier} {normalizedTarget}", dryRun: false, () =>
         {
-            CompactFolder(rootPath, item.Status);
-        }
+            Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
+
+            // Sanitize and save to new location, then delete old
+            var content = File.ReadAllText(item.FullPath);
+            var sanitized = SanitizeCommand.SanitizeText(content);
+            sanitized = SanitizeCommand.FixReferences(sanitized, items).Text;
+
+            HistoryRecorder.CaptureBefore(item.FullPath);
+            File.WriteAllText(newPath, sanitized, new UTF8Encoding(false));
+            File.Delete(item.FullPath);
+            HistoryRecorder.TrackMove(item.FullPath, newPath);
+
+            var displayId = string.IsNullOrEmpty(item.Id) ? item.Slug : $"{item.Id} - {item.Slug}";
+            Console.WriteLine($"Successfully moved '{displayId}' to {normalizedTarget} as '{newFileName}'.");
+
+            // Auto-compact source folder if we moved from an ordered lane to an unordered lane
+            if (!targetLane.Ordered && sourceLane?.Ordered == true)
+            {
+                CompactFolder(rootPath, item.Status);
+            }
+        });
     }
 
     internal static void CompactFolder(string rootPath, string folder)

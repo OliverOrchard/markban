@@ -68,13 +68,13 @@ public static class WorkItemStore
         var projectDir = Path.GetDirectoryName(root);
         if (projectDir == null)
         {
-            return new BoardSettings();
+            return new BoardSettings(History: new HistorySettings());
         }
 
         var configPath = GetConfigPath(projectDir);
         if (!File.Exists(configPath))
         {
-            return new BoardSettings();
+            return new BoardSettings(History: new HistorySettings());
         }
 
         try
@@ -154,12 +154,13 @@ public static class WorkItemStore
                 featureBranches = ParseFeatureBranchSettings(fbEl);
             }
 
+            var history = HistorySettings.FromRoot(doc.RootElement);
             return new BoardSettings(maxLen, commitTags, headingEnabled, slugCasing,
-                blockedEnabled, tagsEnabled, dependsOnEnabled, customFrontmatter, featureBranches, subItemReorder);
+                blockedEnabled, tagsEnabled, dependsOnEnabled, customFrontmatter, featureBranches, subItemReorder, history);
         }
         catch (JsonException)
         {
-            return new BoardSettings();
+            return new BoardSettings(History: new HistorySettings());
         }
     }
 

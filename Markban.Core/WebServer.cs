@@ -138,6 +138,31 @@ public static class WebServer
                 : Results.BadRequest(new { error = result.Message });
         });
 
+        app.MapGet("/api/history", (HttpContext context) =>
+        {
+            context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var boardError);
+            return resolvedRoot is null
+                ? Results.BadRequest(new { error = boardError })
+                : WebHistoryHandler.GetHistory(resolvedRoot);
+        });
+
+        app.MapPost("/api/undo", (HttpContext context) =>
+        {
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var boardError);
+            return resolvedRoot is null
+                ? Results.BadRequest(new { error = boardError })
+                : WebHistoryHandler.Undo(resolvedRoot);
+        });
+
+        app.MapPost("/api/redo", (HttpContext context) =>
+        {
+            var resolvedRoot = ResolveBoard(context, boards, rootPath, out var boardError);
+            return resolvedRoot is null
+                ? Results.BadRequest(new { error = boardError })
+                : WebHistoryHandler.Redo(resolvedRoot);
+        });
+
         app.MapGet("/api/reports/cycle-time", async (HttpContext context) =>
         {
             context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";

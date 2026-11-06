@@ -201,6 +201,10 @@ public static class InitCommand
             "    \"enabled\": true\n",
             "  },\n",
             "  \"subItemReorder\": \"warn\",\n",
+            "  \"history\": {\n",
+            "    \"enabled\": true,\n",
+            "    \"maxEntries\": 50\n",
+            "  },\n",
             "  \"customFrontmatter\": []\n",
             "}"
         );
